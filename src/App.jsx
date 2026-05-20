@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import WebApp from "@twa-dev/sdk";
-import { toPng } from "html-to-image";
+import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { Download, Send, FileImage, FileText, Pencil, Eye, X } from "lucide-react";
 
@@ -45,11 +45,14 @@ export default function App() {
   // --- Export helpers --------------------------------------------------------
   const renderPosterToPng = async () => {
     if (!posterRef.current) return null;
-    return await toPng(posterRef.current, {
-      pixelRatio: 2,
-      cacheBust: true,
+    const canvas = await html2canvas(posterRef.current, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
       backgroundColor: "#FFFFFF",
+      logging: false,
     });
+    return canvas.toDataURL("image/png");
   };
 
   const fileName = (report.leagueName || "league").replace(/\s+/g, "_") + "_poster";
