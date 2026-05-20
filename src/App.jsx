@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import WebApp from "@twa-dev/sdk";
 import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
-import { Download, Send, FileImage, FileText, Pencil, Eye, X, ChevronRight } from "lucide-react";
+import { Download, Send, FileImage, FileText, Pencil, Eye, X } from "lucide-react";
 
 import Editor from "./components/Editor";
 import Poster from "./components/Poster";
@@ -195,34 +195,22 @@ export default function App() {
       {/* ===== Bottom action bar ===== */}
       <div className="fixed bottom-0 inset-x-0 z-40 pb-[env(safe-area-inset-bottom)]">
         <div className="max-w-md mx-auto px-4 py-3">
-          <div className="glass rounded-2xl shadow-glass p-2 grid grid-cols-2 gap-2">
-            <button
-              onClick={() => setShowExport(true)}
-              disabled={busy}
-              className="press flex items-center justify-center gap-2 py-3 rounded-xl
-                         bg-black text-white text-[14px] font-semibold
-                         disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {busy ? (
-                <span className="text-[12px]">{t(lang, "rendering")}</span>
-              ) : (
-                <>
-                  <Download size={16} />
-                  {t(lang, "download")}
-                </>
-              )}
-            </button>
-            <button
-              onClick={shareToTelegram}
-              disabled={busy}
-              className="press flex items-center justify-center gap-2 py-3 rounded-xl
-                         bg-ios-blue text-white text-[14px] font-semibold
-                         disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Send size={16} />
-              {t(lang, "shareTelegram")}
-            </button>
-          </div>
+          <button
+            onClick={() => setShowExport(true)}
+            disabled={busy}
+            className="press w-full flex items-center justify-center gap-2 py-4 rounded-2xl
+                       bg-black text-white text-[16px] font-semibold shadow-glass
+                       disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {busy ? (
+              <span className="text-[13px]">{t(lang, "rendering")}</span>
+            ) : (
+              <>
+                <Download size={18} />
+                {t(lang, "download")}
+              </>
+            )}
+          </button>
         </div>
       </div>
 
@@ -240,72 +228,63 @@ export default function App() {
   );
 }
 
-// --- Export bottom sheet ----------------------------------------------------
+// --- Export full-screen page ------------------------------------------------
 function ExportSheet({ lang, busy, onPng, onPdf, onClose }) {
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      {/* Sheet */}
-      <div className="fixed bottom-0 inset-x-0 z-50 pb-[env(safe-area-inset-bottom)]">
-        <div className="max-w-md mx-auto px-4 pb-4">
-          <div className="bg-white rounded-3xl shadow-glass overflow-hidden">
-            {/* Handle */}
-            <div className="flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 rounded-full bg-black/10" />
-            </div>
-
-            {/* Title */}
-            <div className="px-5 pt-2 pb-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-[18px] font-bold">{t(lang, "downloadTitle")}</h2>
-                <p className="text-[13px] text-ios-gray mt-0.5">{t(lang, "downloadSubtitle")}</p>
-              </div>
-              <button onClick={onClose} className="press w-8 h-8 rounded-full bg-ios-bg flex items-center justify-center">
-                <X size={16} className="text-ios-gray" />
-              </button>
-            </div>
-
-            {/* Options */}
-            <div className="px-4 pb-5 space-y-3">
-              <ExportOption
-                icon={<FileImage size={22} className="text-blue-500" />}
-                bg="bg-blue-50"
-                title={t(lang, "exportPng")}
-                desc={t(lang, "exportPngDesc")}
-                onClick={onPng}
-                disabled={busy}
-              />
-              <ExportOption
-                icon={<FileText size={22} className="text-red-500" />}
-                bg="bg-red-50"
-                title={t(lang, "exportPdf")}
-                desc={t(lang, "exportPdfDesc")}
-                onClick={onPdf}
-                disabled={busy}
-              />
-              <ExportOption
-                icon={<Send size={22} className="text-green-500" />}
-                bg="bg-green-50"
-                title={t(lang, "exportShare")}
-                desc={t(lang, "exportShareDesc")}
-                onClick={() => {
-                  onClose();
-                  // share via navigator if available, else copy link
-                  if (navigator.share) {
-                    navigator.share({ title: "Liga Poster", url: window.location.href }).catch(() => {});
-                  }
-                }}
-                disabled={busy}
-              />
-            </div>
-          </div>
+    <div className="fixed inset-0 z-50 bg-white flex flex-col">
+      {/* Header */}
+      <div className="glass sticky top-0 px-4 py-4 flex items-center gap-3">
+        <button
+          onClick={onClose}
+          className="press w-9 h-9 rounded-full bg-ios-bg flex items-center justify-center"
+        >
+          <X size={18} className="text-black" />
+        </button>
+        <div>
+          <h2 className="text-[17px] font-bold leading-tight">{t(lang, "downloadTitle")}</h2>
+          <p className="text-[12px] text-ios-gray">{t(lang, "downloadSubtitle")}</p>
         </div>
       </div>
-    </>
+
+      {/* Options */}
+      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
+        <ExportOption
+          icon={<FileImage size={26} className="text-blue-500" />}
+          bg="bg-blue-50"
+          title={t(lang, "exportPng")}
+          desc={t(lang, "exportPngDesc")}
+          onClick={onPng}
+          disabled={busy}
+        />
+        <ExportOption
+          icon={<FileText size={26} className="text-red-500" />}
+          bg="bg-red-50"
+          title={t(lang, "exportPdf")}
+          desc={t(lang, "exportPdfDesc")}
+          onClick={onPdf}
+          disabled={busy}
+        />
+        <ExportOption
+          icon={<Send size={26} className="text-green-500" />}
+          bg="bg-green-50"
+          title={t(lang, "exportShare")}
+          desc={t(lang, "exportShareDesc")}
+          onClick={() => {
+            onClose();
+            if (navigator.share) {
+              navigator.share({ title: "Liga Poster", url: window.location.href }).catch(() => {});
+            }
+          }}
+          disabled={busy}
+        />
+      </div>
+
+      {busy && (
+        <div className="px-4 pb-6 text-center text-[13px] text-ios-gray">
+          {t(lang, "rendering")}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -314,17 +293,16 @@ function ExportOption({ icon, bg, title, desc, onClick, disabled }) {
     <button
       onClick={onClick}
       disabled={disabled}
-      className="press w-full flex items-center gap-4 p-4 rounded-2xl bg-ios-bg/60
+      className="press w-full flex items-center gap-4 p-5 rounded-2xl bg-ios-bg/60
                  hover:bg-ios-bg transition disabled:opacity-50 disabled:cursor-not-allowed text-left"
     >
-      <div className={`w-11 h-11 rounded-xl ${bg} flex items-center justify-center flex-shrink-0`}>
+      <div className={`w-14 h-14 rounded-2xl ${bg} flex items-center justify-center flex-shrink-0`}>
         {icon}
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-[15px] font-semibold">{title}</div>
-        <div className="text-[13px] text-ios-gray leading-tight mt-0.5">{desc}</div>
+        <div className="text-[16px] font-semibold">{title}</div>
+        <div className="text-[13px] text-ios-gray leading-tight mt-1">{desc}</div>
       </div>
-      <ChevronRight size={16} className="text-ios-gray flex-shrink-0" />
     </button>
   );
 }
