@@ -1,20 +1,20 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import WebApp from "@twa-dev/sdk";
 import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
-import { Download, Send, FileImage, FileText, Pencil, Eye } from "lucide-react";
+import { Download, Send, FileImage, FileText, Pencil, Eye, X, ChevronRight } from "lucide-react";
 
 import Editor from "./components/Editor";
 import Poster from "./components/Poster";
-import { content, t } from "./i18n";
+import { t } from "./i18n";
 import { createInitialReport } from "./data";
 
 export default function App() {
-  // Single JSON state holding the entire report
   const [report, setReport] = useState(() => createInitialReport());
-  const [lang, setLang] = useState("uz"); // "uz" | "ru"
-  const [view, setView] = useState("edit"); // "edit" | "preview"
+  const [lang, setLang] = useState("uz");
+  const [view, setView] = useState("edit");
   const [busy, setBusy] = useState(false);
+  const [showExport, setShowExport] = useState(false);
 
   const posterRef = useRef(null);
 
@@ -23,8 +23,6 @@ export default function App() {
     try {
       WebApp.ready();
       WebApp.expand();
-
-      // Apply Telegram theme — fall back to white per the design spec
       const tp = WebApp.themeParams || {};
       const root = document.documentElement;
       root.style.setProperty("--tg-bg", tp.bg_color || "#FFFFFF");
@@ -32,22 +30,14 @@ export default function App() {
       root.style.setProperty("--tg-hint", tp.hint_color || "#8E8E93");
       root.style.setProperty("--tg-accent", tp.button_color || "#007AFF");
       root.style.setProperty("--tg-header", tp.header_bg_color || tp.bg_color || "#FFFFFF");
-
-      if (WebApp.setHeaderColor) {
-        try { WebApp.setHeaderColor("bg_color"); } catch (_) {}
-      }
-      if (WebApp.setBackgroundColor) {
-        try { WebApp.setBackgroundColor("#FFFFFF"); } catch (_) {}
-      }
-
-      // Re-apply theme if user changes Telegram theme mid-session
+      if (WebApp.setHeaderColor) { try { WebApp.setHeaderColor("bg_color"); } catch (_) {} }
+      if (WebApp.setBackgroundColor) { try { WebApp.setBackgroundColor("#FFFFFF"); } catch (_) {} }
       WebApp.onEvent?.("themeChanged", () => {
         const p = WebApp.themeParams || {};
         root.style.setProperty("--tg-bg", p.bg_color || "#FFFFFF");
         root.style.setProperty("--tg-text", p.text_color || "#000000");
       });
     } catch (e) {
-      // Running outside Telegram (e.g. local dev) — silently ignore
       console.warn("Telegram WebApp not available", e);
     }
   }, []);
@@ -55,7 +45,6 @@ export default function App() {
   // --- Export helpers --------------------------------------------------------
   const renderPosterToPng = async () => {
     if (!posterRef.current) return null;
-    // pixelRatio:2 for retina-grade output; cacheBust to handle external logo URLs
     return await toPng(posterRef.current, {
       pixelRatio: 2,
       cacheBust: true,
@@ -63,14 +52,17 @@ export default function App() {
     });
   };
 
+  const fileName = (report.leagueName || "league").replace(/\s+/g, "_") + "_poster";
+
   const downloadPng = async () => {
     setBusy(true);
+    setShowExport(false);
     try {
       const dataUrl = await renderPosterToPng();
       if (!dataUrl) return;
       const a = document.createElement("a");
       a.href = dataUrl;
-      a.download = `${(report.leagueName || "league").replace(/\s+/g, "_")}_poster.png`;
+      a.download = `${fileName}.png`;
       a.click();
       WebApp.HapticFeedback?.notificationOccurred?.("success");
     } catch (e) {
@@ -83,11 +75,10 @@ export default function App() {
 
   const downloadPdf = async () => {
     setBusy(true);
+    setShowExport(false);
     try {
       const dataUrl = await renderPosterToPng();
       if (!dataUrl) return;
-
-      // Poster is 1080×1350 — use the same aspect ratio in PDF (portrait A4-ish)
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "px",
@@ -95,7 +86,7 @@ export default function App() {
         hotfixes: ["px_scaling"],
       });
       pdf.addImage(dataUrl, "PNG", 0, 0, 1080, 1350);
-      pdf.save(`${(report.leagueName || "league").replace(/\s+/g, "_")}_poster.pdf`);
+      pdf.save(`${fileName}.pdf`);
       WebApp.HapticFeedback?.notificationOccurred?.("success");
     } catch (e) {
       console.error(e);
@@ -105,10 +96,9 @@ export default function App() {
     }
   };
 
-  const shareToTelegram = async () => {
+  const shareToTelegram = () => {
+    setShowExport(false);
     try {
-      // sendData has a ~4KB limit, so we send a compact payload —
-      // the bot backend would reconstruct or render server-side.
       const payload = {
         type: "league_report",
         lang,
@@ -127,14 +117,12 @@ export default function App() {
     }
   };
 
-  // Stable handler — keep referential equality clean
   const toggleLang = () => setLang((l) => (l === "uz" ? "ru" : "uz"));
 
-  // Compute responsive scale for the preview so the 1080-wide poster fits the viewport
   const [previewScale, setPreviewScale] = useState(0.32);
   useEffect(() => {
     const compute = () => {
-      const w = Math.min(window.innerWidth, 480) - 32; // 16px side padding
+      const w = Math.min(window.innerWidth, 480) - 32;
       setPreviewScale(w / 1080);
     };
     compute();
@@ -155,8 +143,6 @@ export default function App() {
               {t(lang, "appSubtitle")}
             </p>
           </div>
-
-          {/* iOS toggle for UZ <-> RU */}
           <button
             onClick={toggleLang}
             className={`ios-toggle ${lang === "ru" ? "right" : ""}`}
@@ -170,7 +156,6 @@ export default function App() {
           </button>
         </div>
 
-        {/* Segmented view switch */}
         <div className="max-w-md mx-auto px-4 pb-3">
           <div className="bg-ios-bg rounded-xl p-1 grid grid-cols-2 text-[14px] font-semibold">
             <button
@@ -198,64 +183,154 @@ export default function App() {
         {view === "edit" ? (
           <Editor report={report} setReport={setReport} lang={lang} />
         ) : (
-          <PreviewPane scale={previewScale} report={report} lang={lang} posterRef={posterRef} />
+          <PreviewPane scale={previewScale} report={report} lang={lang} />
         )}
       </main>
 
-      {/* ===== Hidden full-size poster for export ===== */}
-      {/* Always mounted (off-screen) so export works from either view */}
-      <div
-        style={{
-          position: "fixed",
-          left: -99999,
-          top: 0,
-          pointerEvents: "none",
-          opacity: 0,
-        }}
-        aria-hidden
-      >
+      {/* Hidden full-size poster for export */}
+      <div style={{ position: "fixed", left: -99999, top: 0, pointerEvents: "none", opacity: 0 }} aria-hidden>
         <Poster ref={posterRef} report={report} lang={lang} />
       </div>
 
-      {/* ===== Bottom action bar (glass) ===== */}
+      {/* ===== Bottom action bar ===== */}
       <div className="fixed bottom-0 inset-x-0 z-40 pb-[env(safe-area-inset-bottom)]">
         <div className="max-w-md mx-auto px-4 py-3">
-          <div className="glass rounded-2xl shadow-glass p-2 grid grid-cols-3 gap-2">
-            <ActionButton
-              icon={<FileImage size={16} />}
-              label={t(lang, "exportPng")}
-              onClick={downloadPng}
+          <div className="glass rounded-2xl shadow-glass p-2 grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setShowExport(true)}
               disabled={busy}
-            />
-            <ActionButton
-              icon={<FileText size={16} />}
-              label={t(lang, "exportPdf")}
-              onClick={downloadPdf}
-              disabled={busy}
-            />
-            <ActionButton
-              icon={<Send size={16} />}
-              label={t(lang, "shareTelegram")}
+              className="press flex items-center justify-center gap-2 py-3 rounded-xl
+                         bg-black text-white text-[14px] font-semibold
+                         disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {busy ? (
+                <span className="text-[12px]">{t(lang, "rendering")}</span>
+              ) : (
+                <>
+                  <Download size={16} />
+                  {t(lang, "download")}
+                </>
+              )}
+            </button>
+            <button
               onClick={shareToTelegram}
               disabled={busy}
-              primary
-            />
+              className="press flex items-center justify-center gap-2 py-3 rounded-xl
+                         bg-ios-blue text-white text-[14px] font-semibold
+                         disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Send size={16} />
+              {t(lang, "shareTelegram")}
+            </button>
           </div>
-          {busy && (
-            <p className="text-center text-[11px] text-ios-gray mt-1">
-              {t(lang, "rendering")}
-            </p>
-          )}
         </div>
       </div>
+
+      {/* ===== Export sheet ===== */}
+      {showExport && (
+        <ExportSheet
+          lang={lang}
+          busy={busy}
+          onPng={downloadPng}
+          onPdf={downloadPdf}
+          onClose={() => setShowExport(false)}
+        />
+      )}
     </div>
   );
 }
 
-// Memoized preview pane — only the visual scaled-down poster
-function PreviewPane({ scale, report, lang, posterRef: _ }) {
-  // We render a *separate* Poster instance here for visual preview
-  // The export-target Poster lives off-screen at full size (see App).
+// --- Export bottom sheet ----------------------------------------------------
+function ExportSheet({ lang, busy, onPng, onPdf, onClose }) {
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      {/* Sheet */}
+      <div className="fixed bottom-0 inset-x-0 z-50 pb-[env(safe-area-inset-bottom)]">
+        <div className="max-w-md mx-auto px-4 pb-4">
+          <div className="bg-white rounded-3xl shadow-glass overflow-hidden">
+            {/* Handle */}
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full bg-black/10" />
+            </div>
+
+            {/* Title */}
+            <div className="px-5 pt-2 pb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-[18px] font-bold">{t(lang, "downloadTitle")}</h2>
+                <p className="text-[13px] text-ios-gray mt-0.5">{t(lang, "downloadSubtitle")}</p>
+              </div>
+              <button onClick={onClose} className="press w-8 h-8 rounded-full bg-ios-bg flex items-center justify-center">
+                <X size={16} className="text-ios-gray" />
+              </button>
+            </div>
+
+            {/* Options */}
+            <div className="px-4 pb-5 space-y-3">
+              <ExportOption
+                icon={<FileImage size={22} className="text-blue-500" />}
+                bg="bg-blue-50"
+                title={t(lang, "exportPng")}
+                desc={t(lang, "exportPngDesc")}
+                onClick={onPng}
+                disabled={busy}
+              />
+              <ExportOption
+                icon={<FileText size={22} className="text-red-500" />}
+                bg="bg-red-50"
+                title={t(lang, "exportPdf")}
+                desc={t(lang, "exportPdfDesc")}
+                onClick={onPdf}
+                disabled={busy}
+              />
+              <ExportOption
+                icon={<Send size={22} className="text-green-500" />}
+                bg="bg-green-50"
+                title={t(lang, "exportShare")}
+                desc={t(lang, "exportShareDesc")}
+                onClick={() => {
+                  onClose();
+                  // share via navigator if available, else copy link
+                  if (navigator.share) {
+                    navigator.share({ title: "Liga Poster", url: window.location.href }).catch(() => {});
+                  }
+                }}
+                disabled={busy}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function ExportOption({ icon, bg, title, desc, onClick, disabled }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="press w-full flex items-center gap-4 p-4 rounded-2xl bg-ios-bg/60
+                 hover:bg-ios-bg transition disabled:opacity-50 disabled:cursor-not-allowed text-left"
+    >
+      <div className={`w-11 h-11 rounded-xl ${bg} flex items-center justify-center flex-shrink-0`}>
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[15px] font-semibold">{title}</div>
+        <div className="text-[13px] text-ios-gray leading-tight mt-0.5">{desc}</div>
+      </div>
+      <ChevronRight size={16} className="text-ios-gray flex-shrink-0" />
+    </button>
+  );
+}
+
+// --- Preview pane -----------------------------------------------------------
+function PreviewPane({ scale, report, lang }) {
   return (
     <div className="px-4 py-6 flex justify-center pb-32">
       <div
@@ -264,39 +339,13 @@ function PreviewPane({ scale, report, lang, posterRef: _ }) {
           height: 1350 * scale,
           overflow: "hidden",
           borderRadius: 20,
-          boxShadow:
-            "0 1px 3px rgba(0,0,0,0.06), 0 20px 40px rgba(0,0,0,0.12)",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 20px 40px rgba(0,0,0,0.12)",
         }}
       >
-        <div
-          style={{
-            transform: `scale(${scale})`,
-            transformOrigin: "top left",
-            width: 1080,
-            height: 1350,
-          }}
-        >
+        <div style={{ transform: `scale(${scale})`, transformOrigin: "top left", width: 1080, height: 1350 }}>
           <Poster report={report} lang={lang} />
         </div>
       </div>
     </div>
-  );
-}
-
-function ActionButton({ icon, label, onClick, disabled, primary }) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={`press flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl
-                  text-[11px] font-semibold transition
-                  ${primary
-                    ? "bg-ios-blue text-white shadow-sm"
-                    : "bg-white/80 text-black/80 hover:bg-white"}
-                  disabled:opacity-50 disabled:cursor-not-allowed`}
-    >
-      {icon}
-      <span className="leading-none text-center">{label}</span>
-    </button>
   );
 }
