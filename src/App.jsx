@@ -54,20 +54,50 @@ export default function App() {
 
   const fileName = (report.leagueName || "league").replace(/\s+/g, "_") + "_poster";
 
+  // Get Telegram user's chat ID from WebApp init data
+  const getChatId = () => {
+    try { return WebApp.initDataUnsafe?.user?.id || null; } catch { return null; }
+  };
+
+  const sendToBot = async (imageBase64, type) => {
+    const chatId = getChatId();
+    if (!chatId) {
+      // fallback: direct download if not inside Telegram
+      const a = document.createElement("a");
+      a.href = imageBase64;
+      a.download = `${fileName}.${type === "pdf" ? "pdf" : "png"}`;
+      a.click();
+      return;
+    }
+    const caption = `🏐 ${report.leagueName || "Poster"} — ${report.roundName || ""}`.trim();
+    const resp = await fetch("/api/send-poster", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chatId,
+        imageBase64,
+        type,
+        filename: `${fileName}.${type === "pdf" ? "pdf" : "png"}`,
+        caption,
+      }),
+    });
+    const data = await resp.json();
+    if (!data.ok) throw new Error(data.error);
+  };
+
   const downloadPng = async () => {
     setBusy(true);
     setShowExport(false);
     try {
       const dataUrl = await renderPosterToPng();
       if (!dataUrl) return;
-      const a = document.createElement("a");
-      a.href = dataUrl;
-      a.download = `${fileName}.png`;
-      a.click();
+      await sendToBot(dataUrl, "png");
       WebApp.HapticFeedback?.notificationOccurred?.("success");
+      WebApp.showAlert?.("🏐 Poster chatga yuborildi!");
     } catch (e) {
       console.error(e);
       WebApp.HapticFeedback?.notificationOccurred?.("error");
+      WebApp.showAlert?.("Xatolik yuz berdi, qayta urinib ko'ring");
     } finally {
       setBusy(false);
     }
@@ -86,34 +116,16 @@ export default function App() {
         hotfixes: ["px_scaling"],
       });
       pdf.addImage(dataUrl, "PNG", 0, 0, 1080, 1350);
-      pdf.save(`${fileName}.pdf`);
+      const pdfBase64 = "data:application/pdf;base64," + pdf.output("datauristring").split(",")[1];
+      await sendToBot(pdfBase64, "pdf");
       WebApp.HapticFeedback?.notificationOccurred?.("success");
+      WebApp.showAlert?.("📄 PDF chatga yuborildi!");
     } catch (e) {
       console.error(e);
       WebApp.HapticFeedback?.notificationOccurred?.("error");
+      WebApp.showAlert?.("Xatolik yuz berdi, qayta urinib ko'ring");
     } finally {
       setBusy(false);
-    }
-  };
-
-  const shareToTelegram = () => {
-    setShowExport(false);
-    try {
-      const payload = {
-        type: "league_report",
-        lang,
-        leagueName: report.leagueName,
-        roundName: report.roundName,
-        season: report.season,
-        standings: report.standings.map(({ id, ...rest }) => rest),
-        results: report.results.map(({ id, ...rest }) => rest),
-        topPerformers: report.topPerformers.map(({ id, ...rest }) => rest),
-      };
-      WebApp.sendData(JSON.stringify(payload));
-      WebApp.HapticFeedback?.notificationOccurred?.("success");
-      WebApp.showAlert?.(t(lang, "confirmShare"));
-    } catch (e) {
-      console.error("sendData failed", e);
     }
   };
 
@@ -269,12 +281,7 @@ function ExportSheet({ lang, busy, onPng, onPdf, onClose }) {
           bg="bg-green-50"
           title={t(lang, "exportShare")}
           desc={t(lang, "exportShareDesc")}
-          onClick={() => {
-            onClose();
-            if (navigator.share) {
-              navigator.share({ title: "Liga Poster", url: window.location.href }).catch(() => {});
-            }
-          }}
+          onClick={onPng}
           disabled={busy}
         />
       </div>
