@@ -68,8 +68,11 @@ export default function App() {
 
   const sendToBot = async (imageBase64, type) => {
     const chatId = getChatId();
+
+    // DEBUG: show chatId to trace the issue
+    WebApp.showAlert?.(`DEBUG: chatId=${chatId}, url=${window.location.search}, type=${type}, size=${Math.round(imageBase64.length/1024)}KB`);
+
     if (!chatId) {
-      // fallback: direct download if not inside Telegram
       const a = document.createElement("a");
       a.href = imageBase64;
       a.download = `${fileName}.${type === "pdf" ? "pdf" : "png"}`;
@@ -89,6 +92,7 @@ export default function App() {
       }),
     });
     const data = await resp.json();
+    WebApp.showAlert?.(`API response: ok=${data.ok}, error=${data.error || "none"}`);
     if (!data.ok) throw new Error(data.error);
   };
 
@@ -96,15 +100,17 @@ export default function App() {
     setBusy(true);
     setShowExport(false);
     try {
+      WebApp.showAlert?.("1-qadam: render boshlanmoqda...");
       const dataUrl = await renderPosterToPng();
+      WebApp.showAlert?.(`2-qadam: render ${dataUrl ? "muvaffaqiyatli, " + Math.round(dataUrl.length/1024) + "KB" : "FAILED"}`);
       if (!dataUrl) return;
       await sendToBot(dataUrl, "png");
       WebApp.HapticFeedback?.notificationOccurred?.("success");
-      WebApp.showAlert?.("🏐 Poster chatga yuborildi!");
+      WebApp.showAlert?.("✅ Poster chatga yuborildi!");
     } catch (e) {
       console.error(e);
       WebApp.HapticFeedback?.notificationOccurred?.("error");
-      WebApp.showAlert?.("Xatolik yuz berdi, qayta urinib ko'ring");
+      WebApp.showAlert?.("❌ Xato: " + e.message);
     } finally {
       setBusy(false);
     }
