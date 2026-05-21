@@ -130,9 +130,7 @@ function buildDarkNeon(d) {
   let body = "";
 
   // Hero — full dark with cyan gradient overlay
-  body += `<rect width="${W}" height="290" fill="${BG}"/>
-<rect width="${W}" height="290" fill="url(#neonHero)"/>
-<defs>
+  body += `<defs>
   <linearGradient id="neonHero" x1="0" y1="0" x2="${W}" y2="290" gradientUnits="userSpaceOnUse">
     <stop offset="0%" stop-color="${CYAN}" stop-opacity="0.08"/>
     <stop offset="50%" stop-color="${BG}" stop-opacity="0"/>
@@ -143,6 +141,8 @@ function buildDarkNeon(d) {
     <stop offset="100%" stop-color="${MAGENTA}"/>
   </linearGradient>
 </defs>
+<rect width="${W}" height="290" fill="${BG}"/>
+<rect width="${W}" height="290" fill="url(#neonHero)"/>
 <rect x="64" y="72" width="180" height="3" rx="2" fill="url(#neonAccent)"/>
 <text x="64" y="62" font-family="Arial,sans-serif" font-size="20" font-weight="600" fill="${CYAN}" opacity="0.9">${esc(lang==="ru"?"Сезон":"Mavsum")} · ${esc(d.season||"")}</text>
 <text x="64" y="${155+(66-lsize)}" font-family="Arial,sans-serif" font-size="${lsize}" font-weight="900" fill="${WHITE}">${lname}</text>

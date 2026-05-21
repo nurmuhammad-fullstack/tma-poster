@@ -210,7 +210,7 @@ export default function App() {
 
       {/* Hidden full-size poster for export */}
       <div style={{ position: "fixed", left: -99999, top: 0, pointerEvents: "none", opacity: 0 }} aria-hidden>
-        <Poster ref={posterRef} report={report} lang={lang} />
+        <Poster ref={posterRef} report={report} lang={lang} theme={theme} />
       </div>
 
       {/* ===== Bottom action bar ===== */}
