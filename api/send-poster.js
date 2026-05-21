@@ -32,7 +32,7 @@ function sendPhoto(chatId, imageBuffer, caption) {
 
     const options = {
       hostname: "api.telegram.org",
-      path: `/bot${encodeURIComponent(BOT_TOKEN)}/sendPhoto`,
+      path: `/bot${BOT_TOKEN.replace(/:/g, "%3A")}/sendPhoto`,
       method: "POST",
       headers: {
         "Content-Type": `multipart/form-data; boundary=${boundary}`,
@@ -80,7 +80,7 @@ function sendDocument(chatId, pdfBuffer, filename, caption) {
 
     const options = {
       hostname: "api.telegram.org",
-      path: `/bot${encodeURIComponent(BOT_TOKEN)}/sendDocument`,
+      path: `/bot${BOT_TOKEN.replace(/:/g, "%3A")}/sendDocument`,
       method: "POST",
       headers: {
         "Content-Type": `multipart/form-data; boundary=${boundary}`,

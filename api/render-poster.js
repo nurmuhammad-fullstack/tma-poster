@@ -141,7 +141,7 @@ function sendDocument(chatId, svgBuffer, caption) {
     const body  = Buffer.concat([Buffer.from(meta + fileH), svgBuffer, Buffer.from(close)]);
     const opts  = {
       hostname: "api.telegram.org",
-      path: `/bot${BOT_TOKEN}/sendDocument`,
+      path: `/bot${BOT_TOKEN.replace(/:/g, "%3A")}/sendDocument`,
       method: "POST",
       headers: {
         "Content-Type": `multipart/form-data; boundary=${boundary}`,
