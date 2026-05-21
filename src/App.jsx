@@ -57,9 +57,13 @@ export default function App() {
 
   const fileName = (report.leagueName || "league").replace(/\s+/g, "_") + "_poster";
 
-  // Get Telegram user's chat ID from WebApp init data
+  // chatId: URL ?chatId=... → WebApp.initDataUnsafe.user.id → null
   const getChatId = () => {
-    try { return WebApp.initDataUnsafe?.user?.id || null; } catch { return null; }
+    try {
+      const fromUrl = new URLSearchParams(window.location.search).get("chatId");
+      if (fromUrl) return fromUrl;
+      return WebApp.initDataUnsafe?.user?.id || null;
+    } catch { return null; }
   };
 
   const sendToBot = async (imageBase64, type) => {

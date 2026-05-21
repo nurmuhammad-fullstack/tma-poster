@@ -37,13 +37,15 @@ export default async function handler(req, res) {
     const firstName = message.from?.first_name || "Do'st";
 
     if (text === "/start") {
+      // chatId ni URL ga qo'shamiz — Mini App shuni o'qib bot ga yuboradi
+      const appUrl = `${APP_URL}?chatId=${chatId}`;
       await sendMessage(
         chatId,
         `Assalomu alaykum, <b>${firstName}</b>! 🏐\n\nMen <b>Voleybol Poster Studio</b> botiman.\n\nTur natijalarini professional posterga aylantiring va yuklab oling!\n\nQuyidagi tugmani bosing 👇`,
         {
           reply_markup: {
             inline_keyboard: [
-              [{ text: "🏐 Posterni ochish", web_app: { url: APP_URL } }],
+              [{ text: "🏐 Posterni ochish", web_app: { url: appUrl } }],
             ],
           },
         }
