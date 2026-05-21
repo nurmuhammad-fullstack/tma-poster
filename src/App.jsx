@@ -13,6 +13,7 @@ export default function App() {
   const [view, setView] = useState("edit");
   const [busy, setBusy] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [theme, setTheme] = useState("classic");
 
   const posterRef = useRef(null);
 
@@ -79,7 +80,7 @@ export default function App() {
     const svgResp = await fetch("/api/render-poster", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ getSvg: true, reportData: report, lang }),
+      body: JSON.stringify({ getSvg: true, reportData: report, lang, theme }),
     });
     const svgData = await svgResp.json();
     if (!svgData.ok) throw new Error(svgData.error || "SVG render xatosi");
@@ -200,7 +201,10 @@ export default function App() {
         {view === "edit" ? (
           <Editor report={report} setReport={setReport} lang={lang} />
         ) : (
-          <PreviewPane scale={previewScale} report={report} lang={lang} />
+          <>
+            <ThemeSelector theme={theme} setTheme={setTheme} lang={lang} />
+            <PreviewPane scale={previewScale} report={report} lang={lang} theme={theme} />
+          </>
         )}
       </main>
 
@@ -236,6 +240,7 @@ export default function App() {
         <ExportSheet
           lang={lang}
           busy={busy}
+          theme={theme}
           onPng={downloadPng}
           onPdf={downloadPdf}
           onClose={() => setShowExport(false)}
@@ -319,10 +324,48 @@ function ExportOption({ icon, bg, title, desc, onClick, disabled }) {
   );
 }
 
-// --- Preview pane -----------------------------------------------------------
-function PreviewPane({ scale, report, lang }) {
+// --- Theme selector ---------------------------------------------------------
+const THEMES = [
+  { id: "classic", label: "Classic",  colors: ["#0D1B2A", "#F97316", "#FFFFFF"] },
+  { id: "neon",    label: "Dark Neon", colors: ["#0A0A0F", "#00D9FF", "#FF006E"] },
+  { id: "minimal", label: "Minimal",  colors: ["#FAFAFA", "#D4A017", "#1A1A2E"] },
+];
+
+function ThemeSelector({ theme, setTheme }) {
   return (
-    <div className="px-4 py-6 flex justify-center pb-32">
+    <div className="px-4 pt-4 pb-2">
+      <p className="text-[12px] font-semibold text-ios-gray mb-3 uppercase tracking-wide">Dizayn shablon</p>
+      <div className="grid grid-cols-3 gap-3">
+        {THEMES.map((th) => (
+          <button
+            key={th.id}
+            onClick={() => setTheme(th.id)}
+            className={`press rounded-2xl overflow-hidden border-2 transition-all ${
+              theme === th.id ? "border-black scale-[1.03]" : "border-transparent"
+            }`}
+          >
+            <div
+              className="h-16 w-full flex items-center justify-center gap-1"
+              style={{ background: th.colors[0] }}
+            >
+              {th.colors.map((c, i) => (
+                <div key={i} className="w-3 h-3 rounded-full" style={{ background: c }} />
+              ))}
+            </div>
+            <div className="bg-ios-bg py-1.5 text-[11px] font-semibold text-black text-center">
+              {th.label}
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// --- Preview pane -----------------------------------------------------------
+function PreviewPane({ scale, report, lang, theme }) {
+  return (
+    <div className="px-4 py-4 flex justify-center pb-32">
       <div
         style={{
           width: 1080 * scale,
@@ -333,7 +376,7 @@ function PreviewPane({ scale, report, lang }) {
         }}
       >
         <div style={{ transform: `scale(${scale})`, transformOrigin: "top left", width: 1080, height: 1350 }}>
-          <Poster report={report} lang={lang} />
+          <Poster report={report} lang={lang} theme={theme} />
         </div>
       </div>
     </div>
