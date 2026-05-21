@@ -1,6 +1,5 @@
-import https from "https";
-
 const BOT_TOKEN = process.env.BOT_TOKEN;
+const TG = `https://api.telegram.org/bot${BOT_TOKEN}`;
 const W = 1080, H = 1350;
 const NAVY   = "#0D1B2A";
 const ACCENT = "#F97316";
@@ -128,35 +127,13 @@ ${body}
 </svg>`;
 }
 
-// ── sendDocument (SVG fayl sifatida) ─────────────────────────────────────────
-function sendDocument(chatId, svgBuffer, caption) {
-  return new Promise((resolve, reject) => {
-    const boundary = "----TGB" + Date.now();
-    const CRLF = "\r\n";
-    const meta =
-      `--${boundary}${CRLF}Content-Disposition: form-data; name="chat_id"${CRLF}${CRLF}${chatId}${CRLF}` +
-      (caption ? `--${boundary}${CRLF}Content-Disposition: form-data; name="caption"${CRLF}${CRLF}${caption}${CRLF}` : "");
-    const fileH = `--${boundary}${CRLF}Content-Disposition: form-data; name="document"; filename="poster.svg"${CRLF}Content-Type: image/svg+xml${CRLF}${CRLF}`;
-    const close = `${CRLF}--${boundary}--${CRLF}`;
-    const body  = Buffer.concat([Buffer.from(meta + fileH), svgBuffer, Buffer.from(close)]);
-    const opts  = {
-      hostname: "api.telegram.org",
-      path: `/bot${BOT_TOKEN.replace(/:/g, "%3A")}/sendDocument`,
-      method: "POST",
-      headers: {
-        "Content-Type": `multipart/form-data; boundary=${boundary}`,
-        "Content-Length": body.length,
-      },
-    };
-    const req = https.request(opts, (res) => {
-      let d = "";
-      res.on("data", c => d += c);
-      res.on("end", () => { try { resolve(JSON.parse(d)); } catch (e) { reject(e); } });
-    });
-    req.on("error", reject);
-    req.write(body);
-    req.end();
-  });
+async function sendDocument(chatId, svgBuffer, caption) {
+  const form = new FormData();
+  form.append("chat_id", String(chatId));
+  if (caption) form.append("caption", caption);
+  form.append("document", new Blob([svgBuffer], { type: "image/svg+xml" }), "poster.svg");
+  const res = await fetch(`${TG}/sendDocument`, { method: "POST", body: form });
+  return res.json();
 }
 
 // ── handler ──────────────────────────────────────────────────────────────────
