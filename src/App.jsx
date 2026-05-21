@@ -1,7 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import WebApp from "@twa-dev/sdk";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 import { Download, Send, FileImage, FileText, Pencil, Eye, X } from "lucide-react";
 
 import Editor from "./components/Editor";
@@ -42,22 +40,7 @@ export default function App() {
     }
   }, []);
 
-  // --- Export helpers --------------------------------------------------------
-  const renderPosterToPng = async () => {
-    if (!posterRef.current) return null;
-    const canvas = await html2canvas(posterRef.current, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: "#FFFFFF",
-      logging: false,
-    });
-    return canvas.toDataURL("image/png");
-  };
-
-  const fileName = (report.leagueName || "league").replace(/\s+/g, "_") + "_poster";
-
-  // chatId: URL ?chatId=... → WebApp.initDataUnsafe.user.id → null
+  // chatId: URL ?chatId=... → WebApp.initDataUnsafe.user.id
   const getChatId = () => {
     try {
       const fromUrl = new URLSearchParams(window.location.search).get("chatId");
@@ -66,51 +49,30 @@ export default function App() {
     } catch { return null; }
   };
 
-  const sendToBot = async (imageBase64, type) => {
+  // Server renders the poster — no browser canvas needed
+  const sendToServer = async () => {
     const chatId = getChatId();
-
-    // DEBUG: show chatId to trace the issue
-    WebApp.showAlert?.(`DEBUG: chatId=${chatId}, url=${window.location.search}, type=${type}, size=${Math.round(imageBase64.length/1024)}KB`);
-
-    if (!chatId) {
-      const a = document.createElement("a");
-      a.href = imageBase64;
-      a.download = `${fileName}.${type === "pdf" ? "pdf" : "png"}`;
-      a.click();
-      return;
-    }
-    const caption = `🏐 ${report.leagueName || "Poster"} — ${report.roundName || ""}`.trim();
-    const resp = await fetch("/api/send-poster", {
+    if (!chatId) throw new Error("chatId topilmadi. Botdan /start orqali oching.");
+    const resp = await fetch("/api/render-poster", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chatId,
-        imageBase64,
-        type,
-        filename: `${fileName}.${type === "pdf" ? "pdf" : "png"}`,
-        caption,
-      }),
+      body: JSON.stringify({ chatId, reportData: report, lang }),
     });
     const data = await resp.json();
-    WebApp.showAlert?.(`API response: ok=${data.ok}, error=${data.error || "none"}`);
-    if (!data.ok) throw new Error(data.error);
+    if (!data.ok) throw new Error(data.error || "Server xatosi");
   };
 
   const downloadPng = async () => {
     setBusy(true);
     setShowExport(false);
     try {
-      WebApp.showAlert?.("1-qadam: render boshlanmoqda...");
-      const dataUrl = await renderPosterToPng();
-      WebApp.showAlert?.(`2-qadam: render ${dataUrl ? "muvaffaqiyatli, " + Math.round(dataUrl.length/1024) + "KB" : "FAILED"}`);
-      if (!dataUrl) return;
-      await sendToBot(dataUrl, "png");
+      await sendToServer();
       WebApp.HapticFeedback?.notificationOccurred?.("success");
-      WebApp.showAlert?.("✅ Poster chatga yuborildi!");
+      WebApp.showAlert?.("🏐 Poster chatga yuborildi!");
     } catch (e) {
       console.error(e);
       WebApp.HapticFeedback?.notificationOccurred?.("error");
-      WebApp.showAlert?.("❌ Xato: " + e.message);
+      WebApp.showAlert?.("❌ " + e.message);
     } finally {
       setBusy(false);
     }
@@ -120,23 +82,13 @@ export default function App() {
     setBusy(true);
     setShowExport(false);
     try {
-      const dataUrl = await renderPosterToPng();
-      if (!dataUrl) return;
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "px",
-        format: [1080, 1350],
-        hotfixes: ["px_scaling"],
-      });
-      pdf.addImage(dataUrl, "PNG", 0, 0, 1080, 1350);
-      const pdfBase64 = "data:application/pdf;base64," + pdf.output("datauristring").split(",")[1];
-      await sendToBot(pdfBase64, "pdf");
+      await sendToServer();
       WebApp.HapticFeedback?.notificationOccurred?.("success");
-      WebApp.showAlert?.("📄 PDF chatga yuborildi!");
+      WebApp.showAlert?.("📄 Poster chatga yuborildi!");
     } catch (e) {
       console.error(e);
       WebApp.HapticFeedback?.notificationOccurred?.("error");
-      WebApp.showAlert?.("Xatolik yuz berdi, qayta urinib ko'ring");
+      WebApp.showAlert?.("❌ " + e.message);
     } finally {
       setBusy(false);
     }
