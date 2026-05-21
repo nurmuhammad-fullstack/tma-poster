@@ -145,21 +145,28 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
 
   try {
-    const { chatId, reportData, lang } = req.body;
-    if (!chatId || !reportData) {
-      return res.status(400).json({ ok: false, error: "Missing chatId or reportData" });
+    const { getSvg, reportData, lang } = req.body;
+    if (!reportData) {
+      return res.status(400).json({ ok: false, error: "Missing reportData" });
     }
 
     const svgStr = buildSVG({ ...reportData, lang: lang || "uz" });
-    const svgBuf = Buffer.from(svgStr, "utf8");
 
+    // getSvg=true → just return SVG string to browser for PNG conversion
+    if (getSvg) {
+      return res.status(200).json({ ok: true, svg: svgStr });
+    }
+
+    // fallback: send SVG as document (not used anymore but kept as backup)
+    const { chatId } = req.body;
+    if (!chatId) return res.status(400).json({ ok: false, error: "Missing chatId" });
+    const svgBuf = Buffer.from(svgStr, "utf8");
     const caption = `🏐 ${reportData.leagueName || "Poster"}${reportData.roundName ? " — " + reportData.roundName : ""}`;
     const result  = await sendDocument(String(chatId), svgBuf, caption);
 
     if (result.ok) {
       res.status(200).json({ ok: true });
     } else {
-      console.error("Telegram error:", result);
       res.status(200).json({ ok: false, error: result.description });
     }
   } catch (e) {

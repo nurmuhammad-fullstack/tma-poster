@@ -49,24 +49,64 @@ export default function App() {
     } catch { return null; }
   };
 
-  // Server renders the poster — no browser canvas needed
-  const sendToServer = async () => {
+  // SVG string → PNG base64 via browser Canvas (works in Telegram WebView)
+  const svgToPngBase64 = (svgStr) =>
+    new Promise((resolve, reject) => {
+      const W = 1080, H = 1350;
+      const canvas = document.createElement("canvas");
+      canvas.width  = W * 2;
+      canvas.height = H * 2;
+      const ctx = canvas.getContext("2d");
+      ctx.scale(2, 2);
+      const img = new Image();
+      const blob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
+      const url  = URL.createObjectURL(blob);
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, W, H);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL("image/png"));
+      };
+      img.onerror = (e) => { URL.revokeObjectURL(url); reject(new Error("SVG render xatosi")); };
+      img.src = url;
+    });
+
+  // Get SVG string from server, convert to PNG in browser, send PNG back to server→Telegram
+  const sendPng = async () => {
     const chatId = getChatId();
     if (!chatId) throw new Error("chatId topilmadi. Botdan /start orqali oching.");
-    const resp = await fetch("/api/render-poster", {
+
+    // 1. Get SVG from server
+    const svgResp = await fetch("/api/render-poster", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chatId, reportData: report, lang }),
+      body: JSON.stringify({ getSvg: true, reportData: report, lang }),
     });
-    const data = await resp.json();
-    if (!data.ok) throw new Error(data.error || "Server xatosi");
+    const svgData = await svgResp.json();
+    if (!svgData.ok) throw new Error(svgData.error || "SVG render xatosi");
+
+    // 2. Convert SVG → PNG in browser
+    const pngBase64 = await svgToPngBase64(svgData.svg);
+
+    // 3. Send PNG to Telegram via server
+    const sendResp = await fetch("/api/send-poster", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chatId,
+        imageBase64: pngBase64,
+        type: "png",
+        caption: `🏐 ${report.leagueName || "Poster"}${report.roundName ? " — " + report.roundName : ""}`,
+      }),
+    });
+    const sendData = await sendResp.json();
+    if (!sendData.ok) throw new Error(sendData.error || "Yuborish xatosi");
   };
 
   const downloadPng = async () => {
     setBusy(true);
     setShowExport(false);
     try {
-      await sendToServer();
+      await sendPng();
       WebApp.HapticFeedback?.notificationOccurred?.("success");
       WebApp.showAlert?.("🏐 Poster chatga yuborildi!");
     } catch (e) {
@@ -82,7 +122,7 @@ export default function App() {
     setBusy(true);
     setShowExport(false);
     try {
-      await sendToServer();
+      await sendPng();
       WebApp.HapticFeedback?.notificationOccurred?.("success");
       WebApp.showAlert?.("📄 Poster chatga yuborildi!");
     } catch (e) {
