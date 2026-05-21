@@ -8,7 +8,7 @@ function sendMessage(chatId, text, extra = {}) {
     const body = JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML", ...extra });
     const options = {
       hostname: "api.telegram.org",
-      path: `/bot${BOT_TOKEN}/sendMessage`,
+      path: `/bot${encodeURIComponent(BOT_TOKEN)}/sendMessage`,
       method: "POST",
       headers: {
         "Content-Type": "application/json",

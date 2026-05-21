@@ -349,7 +349,7 @@ function sendPhoto(chatId, buffer, caption) {
     const body = Buffer.concat([Buffer.from(meta + fileH), buffer, Buffer.from(close)]);
     const opts = {
       hostname: "api.telegram.org",
-      path: `/bot${BOT_TOKEN}/sendPhoto`,
+      path: `/bot${encodeURIComponent(BOT_TOKEN)}/sendPhoto`,
       method: "POST",
       headers: { "Content-Type": `multipart/form-data; boundary=${boundary}`, "Content-Length": body.length },
     };
