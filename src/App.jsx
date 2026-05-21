@@ -49,7 +49,8 @@ export default function App() {
     } catch { return null; }
   };
 
-  // SVG string → PNG base64 via browser Canvas (works in Telegram WebView)
+  // SVG string → PNG base64 via browser Canvas
+  // Uses data URI (more reliable in Telegram WebView than createObjectURL)
   const svgToPngBase64 = (svgStr) =>
     new Promise((resolve, reject) => {
       const W = 1080, H = 1350;
@@ -59,15 +60,14 @@ export default function App() {
       const ctx = canvas.getContext("2d");
       ctx.scale(2, 2);
       const img = new Image();
-      const blob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
-      const url  = URL.createObjectURL(blob);
+      // encode as data URI — avoids createObjectURL CSP issues in WebView
+      const encoded = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgStr);
       img.onload = () => {
         ctx.drawImage(img, 0, 0, W, H);
-        URL.revokeObjectURL(url);
         resolve(canvas.toDataURL("image/png"));
       };
-      img.onerror = (e) => { URL.revokeObjectURL(url); reject(new Error("SVG render xatosi")); };
-      img.src = url;
+      img.onerror = () => reject(new Error("SVG render xatosi"));
+      img.src = encoded;
     });
 
   // Get SVG string from server, convert to PNG in browser, send PNG back to server→Telegram
