@@ -13,7 +13,7 @@ export default function App() {
   const [view, setView] = useState("edit");
   const [busy, setBusy] = useState(false);
   const [showExport, setShowExport] = useState(false);
-  const [theme, setTheme] = useState("classic");
+  const [theme, setTheme] = useState("stadium");
 
   const posterRef = useRef(null);
 
@@ -326,9 +326,9 @@ function ExportOption({ icon, bg, title, desc, onClick, disabled }) {
 
 // --- Theme selector ---------------------------------------------------------
 const THEMES = [
-  { id: "classic", label: "Classic",  colors: ["#0D1B2A", "#F97316", "#FFFFFF"] },
-  { id: "neon",    label: "Dark Neon", colors: ["#0A0A0F", "#00D9FF", "#FF006E"] },
-  { id: "minimal", label: "Minimal",  colors: ["#FAFAFA", "#D4A017", "#1A1A2E"] },
+  { id: "stadium", label: "Stadium",  colors: ["#0B1A35", "#F5C842", "#1E3A6E"] },
+  { id: "neon",    label: "Neon",     colors: ["#07070F", "#00E5FF", "#FF2D78"] },
+  { id: "minimal", label: "Minimal",  colors: ["#F8F7F4", "#C9962A", "#12121E"] },
 ];
 
 function ThemeSelector({ theme, setTheme }) {
