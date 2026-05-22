@@ -74,9 +74,9 @@ ${iconPath(icon, x+7, y-15, "#fff")}
 <text x="64" y="240" font-family="Arial,sans-serif" font-size="28" font-weight="600" fill="rgba(255,255,255,0.9)">${esc(d.roundName||"")}</text>
 <rect y="290" width="${W}" height="6" fill="${ACCENT}"/>`;
 
-  let y = 296 + 44;
+  let y = 296 + 54;
   body += secHeader(lx, y, lang==="ru"?"Турнирная таблица":"Turnir jadvali", "trophy");
-  y += 28;
+  y += 40;
   // header row
   body += `<rect x="${lx-8}" y="${y}" width="${colW+16}" height="30" rx="6" fill="${NAVY}" opacity="0.07"/>
 <text x="${lx+4}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${GRAY}" letter-spacing="1">#</text>
@@ -103,9 +103,9 @@ ${iconPath(icon, x+7, y-15, "#fff")}
 <line x1="${lx}" y1="${ry+43}" x2="${lx+colW}" y2="${ry+43}" stroke="${BORDER}" stroke-width="1"/>`;
   }
 
-  let ry2 = 296 + 44;
+  let ry2 = 296 + 54;
   body += secHeader(rx, ry2, lang==="ru"?"Результаты":"Natijalar", "ball");
-  ry2 += 28;
+  ry2 += 40;
   for (const m of results) {
     const hasH = !!(m.label || m.date), cardH = hasH ? 74 : 56;
     const cx = rx + colW / 2, sy = ry2 + (hasH ? 57 : 38);
@@ -123,9 +123,9 @@ ${iconPath(icon, x+7, y-15, "#fff")}
     ry2 += cardH + 12;
   }
 
-  ry2 += 16;
-  body += secHeader(rx, ry2, lang==="ru"?"Лучшие игроки":"Eng yaxshi o'yinchilar", "star");
   ry2 += 28;
+  body += secHeader(rx, ry2, lang==="ru"?"Лучшие игроки":"Eng yaxshi o'yinchilar", "star");
+  ry2 += 40;
   const medalC = ["#E5A800","#9AA0AE","#9C5A1F"];
   for (let i = 0; i < top.length; i++) {
     const p = top[i], py = ry2 + i * 52, mc = i < 3 ? medalC[i] : NAVY;
@@ -190,9 +190,9 @@ ${iconPath(icon, x+7, y-15, CYAN)}
 <text x="64" y="240" font-family="Arial,sans-serif" font-size="28" font-weight="600" fill="rgba(255,255,255,0.75)">${esc(d.roundName||"")}</text>
 <rect y="288" width="${W}" height="3" fill="url(#neonAccent)"/>`;
 
-  let y = 296 + 44;
+  let y = 296 + 54;
   body += secHeader(lx, y, lang==="ru"?"Турнирная таблица":"Turnir jadvali", "trophy");
-  y += 28;
+  y += 40;
   body += `<rect x="${lx-8}" y="${y}" width="${colW+16}" height="30" rx="6" fill="rgba(0,217,255,0.06)"/>
 <text x="${lx+4}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${GRAY}" letter-spacing="1">#</text>
 <text x="${lx+72}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${GRAY}" letter-spacing="1">${lang==="ru"?"КОМАНДА":"JAMOA"}</text>
@@ -216,9 +216,9 @@ ${iconPath(icon, x+7, y-15, CYAN)}
 <line x1="${lx}" y1="${ry+43}" x2="${lx+colW}" y2="${ry+43}" stroke="${BORDER}" stroke-width="1"/>`;
   }
 
-  let ry2 = 296 + 44;
+  let ry2 = 296 + 54;
   body += secHeader(rx, ry2, lang==="ru"?"Результаты":"Natijalar", "ball");
-  ry2 += 28;
+  ry2 += 40;
   for (const m of results) {
     const hasH = !!(m.label || m.date), cardH = hasH ? 74 : 56;
     const cx = rx + colW / 2, sy = ry2 + (hasH ? 57 : 38);
@@ -237,9 +237,9 @@ ${iconPath(icon, x+7, y-15, CYAN)}
     ry2 += cardH + 12;
   }
 
-  ry2 += 16;
-  body += secHeader(rx, ry2, lang==="ru"?"Лучшие игроки":"Eng yaxshi o'yinchilar", "star");
   ry2 += 28;
+  body += secHeader(rx, ry2, lang==="ru"?"Лучшие игроки":"Eng yaxshi o'yinchilar", "star");
+  ry2 += 40;
   const medalC = ["#FFD700","#C0C0C0","#CD7F32"];
   for (let i = 0; i < top.length; i++) {
     const p = top[i], py = ry2 + i * 52;
@@ -293,9 +293,9 @@ ${iconPath(icon, x+7, y-15, GOLD)}
 <text x="88" y="240" font-family="Georgia,serif" font-size="24" font-weight="400" fill="rgba(255,255,255,0.65)" font-style="italic">${esc(d.roundName||"")}</text>
 <line x1="0" y1="290" x2="${W}" y2="290" stroke="${GOLD}" stroke-width="2"/>`;
 
-  let y = 296 + 44;
+  let y = 296 + 54;
   body += secHeader(lx, y, lang==="ru"?"Турнирная таблица":"Turnir jadvali", "trophy");
-  y += 28;
+  y += 40;
   body += `<rect x="${lx-8}" y="${y}" width="${colW+16}" height="30" rx="6" fill="${GOLD}" opacity="0.07"/>
 <text x="${lx+4}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${GRAY}" letter-spacing="1">#</text>
 <text x="${lx+72}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${GRAY}" letter-spacing="1">${lang==="ru"?"КОМАНДА":"JAMOA"}</text>
@@ -319,9 +319,9 @@ ${iconPath(icon, x+7, y-15, GOLD)}
 <line x1="${lx}" y1="${ry+43}" x2="${lx+colW}" y2="${ry+43}" stroke="${BORDER}" stroke-width="1"/>`;
   }
 
-  let ry2 = 296 + 44;
+  let ry2 = 296 + 54;
   body += secHeader(rx, ry2, lang==="ru"?"Результаты":"Natijalar", "ball");
-  ry2 += 28;
+  ry2 += 40;
   for (const m of results) {
     const hasH = !!(m.label || m.date), cardH = hasH ? 74 : 56;
     const cx = rx + colW / 2, sy = ry2 + (hasH ? 57 : 38);
@@ -339,9 +339,9 @@ ${iconPath(icon, x+7, y-15, GOLD)}
     ry2 += cardH + 12;
   }
 
-  ry2 += 16;
-  body += secHeader(rx, ry2, lang==="ru"?"Лучшие игроки":"Eng yaxshi o'yinchilar", "star");
   ry2 += 28;
+  body += secHeader(rx, ry2, lang==="ru"?"Лучшие игроки":"Eng yaxshi o'yinchilar", "star");
+  ry2 += 40;
   const medalC = ["#D4A017","#9AA0AE","#9C5A1F"];
   for (let i = 0; i < top.length; i++) {
     const p = top[i], py = ry2 + i * 52, mc = i < 3 ? medalC[i] : SOFT;
