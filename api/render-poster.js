@@ -43,26 +43,30 @@ function buildClassic(d) {
   let y = 296 + 44;
   body += secHeader(lx, y, lang==="ru"?"Турнирная таблица":"Turnir jadvali");
   y += 28;
+  // header row
   body += `<rect x="${lx-8}" y="${y}" width="${colW+16}" height="30" rx="6" fill="${NAVY}" opacity="0.07"/>
 <text x="${lx+4}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${GRAY}" letter-spacing="1">#</text>
 <text x="${lx+72}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${GRAY}" letter-spacing="1">${lang==="ru"?"КОМАНДА":"JAMOA"}</text>
 <text x="${lx+colW-107}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${ACCENT}" text-anchor="middle" letter-spacing="1">${lang==="ru"?"И":"O'"}</text>
 <text x="${lx+colW-62}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${ACCENT}" text-anchor="middle" letter-spacing="1">${lang==="ru"?"С":"S"}</text>
 <text x="${lx+colW-17}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${ACCENT}" text-anchor="middle" letter-spacing="1">${lang==="ru"?"О":"B"}</text>`;
-  y += 40;
+  y += 38;
 
+  // data rows — each row is 44px tall, top-aligned from y
   for (let i = 0; i < standings.length; i++) {
-    const row = standings[i], ry = y + i * 46;
-    const bc = i === 0 ? ACCENT : i < 3 ? "#FB923C" : NAVY;
-    if (i < 3) body += `<rect x="${lx-4}" y="${ry-22}" width="${colW+8}" height="42" fill="${ACCENT}" opacity="0.05"/>`;
-    body += `<rect x="${lx}" y="${ry-18}" width="26" height="26" rx="5" fill="${bc}"/>
-<text x="${lx+13}" y="${ry-1}" font-family="Arial,sans-serif" font-size="13" font-weight="800" fill="${WHITE}" text-anchor="middle">${esc(row.rank)}</text>
-<circle cx="${lx+52}" cy="${ry-5}" r="14" fill="${BORDER}"/>
-<text x="${lx+72}" y="${ry}" font-family="Arial,sans-serif" font-size="15" font-weight="600" fill="${NAVY}">${esc(row.team||"—")}</text>
-<text x="${lx+colW-107}" y="${ry}" font-family="Arial,sans-serif" font-size="14" fill="${GRAY}" text-anchor="middle">${esc(row.played)}</text>
-<text x="${lx+colW-62}" y="${ry}" font-family="Arial,sans-serif" font-size="14" fill="${GRAY}" text-anchor="middle">${row.gd>0?"+"+row.gd:esc(row.gd)}</text>
-<text x="${lx+colW-17}" y="${ry}" font-family="Arial,sans-serif" font-size="17" font-weight="800" fill="${NAVY}" text-anchor="middle">${esc(row.points)}</text>
-<line x1="${lx}" y1="${ry+20}" x2="${lx+colW}" y2="${ry+20}" stroke="${BORDER}" stroke-width="1"/>`;
+    const row = standings[i];
+    const ry  = y + i * 44;      // top of this row
+    const mid = ry + 22;         // vertical center
+    const bc  = i === 0 ? ACCENT : i < 3 ? "#FB923C" : NAVY;
+    if (i < 3) body += `<rect x="${lx-4}" y="${ry+2}" width="${colW+8}" height="40" rx="6" fill="${ACCENT}" opacity="0.05"/>`;
+    body += `<rect x="${lx}" y="${ry+8}" width="26" height="26" rx="5" fill="${bc}"/>
+<text x="${lx+13}" y="${ry+25}" font-family="Arial,sans-serif" font-size="13" font-weight="800" fill="${WHITE}" text-anchor="middle">${esc(row.rank)}</text>
+<circle cx="${lx+52}" cy="${mid}" r="14" fill="${BORDER}"/>
+<text x="${lx+72}" y="${mid+5}" font-family="Arial,sans-serif" font-size="15" font-weight="600" fill="${NAVY}">${esc(row.team||"—")}</text>
+<text x="${lx+colW-107}" y="${mid+5}" font-family="Arial,sans-serif" font-size="14" fill="${GRAY}" text-anchor="middle">${esc(row.played)}</text>
+<text x="${lx+colW-62}" y="${mid+5}" font-family="Arial,sans-serif" font-size="14" fill="${GRAY}" text-anchor="middle">${row.gd>0?"+"+row.gd:esc(row.gd)}</text>
+<text x="${lx+colW-17}" y="${mid+6}" font-family="Arial,sans-serif" font-size="17" font-weight="800" fill="${NAVY}" text-anchor="middle">${esc(row.points)}</text>
+<line x1="${lx}" y1="${ry+43}" x2="${lx+colW}" y2="${ry+43}" stroke="${BORDER}" stroke-width="1"/>`;
   }
 
   let ry2 = 296 + 44;
@@ -159,19 +163,21 @@ function buildDarkNeon(d) {
 <text x="${lx+colW-107}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${CYAN}" text-anchor="middle" letter-spacing="1">${lang==="ru"?"И":"O'"}</text>
 <text x="${lx+colW-62}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${CYAN}" text-anchor="middle" letter-spacing="1">${lang==="ru"?"С":"S"}</text>
 <text x="${lx+colW-17}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${CYAN}" text-anchor="middle" letter-spacing="1">${lang==="ru"?"О":"B"}</text>`;
-  y += 40;
+  y += 38;
 
   for (let i = 0; i < standings.length; i++) {
-    const row = standings[i], ry = y + i * 46;
+    const row = standings[i];
+    const ry  = y + i * 44;
+    const mid = ry + 22;
     const rankColor = i === 0 ? CYAN : i < 3 ? MAGENTA : GRAY;
-    if (i < 3) body += `<rect x="${lx-4}" y="${ry-22}" width="${colW+8}" height="42" rx="6" fill="${CARD}"/>`;
-    body += `<text x="${lx+13}" y="${ry-1}" font-family="Arial,sans-serif" font-size="16" font-weight="900" fill="${rankColor}" text-anchor="middle">${esc(row.rank)}</text>
-<circle cx="${lx+52}" cy="${ry-5}" r="14" fill="${CARD}"/>
-<text x="${lx+72}" y="${ry}" font-family="Arial,sans-serif" font-size="15" font-weight="600" fill="${WHITE}">${esc(row.team||"—")}</text>
-<text x="${lx+colW-107}" y="${ry}" font-family="Arial,sans-serif" font-size="14" fill="${GRAY}" text-anchor="middle">${esc(row.played)}</text>
-<text x="${lx+colW-62}" y="${ry}" font-family="Arial,sans-serif" font-size="14" fill="${GRAY}" text-anchor="middle">${row.gd>0?"+"+row.gd:esc(row.gd)}</text>
-<text x="${lx+colW-17}" y="${ry}" font-family="Arial,sans-serif" font-size="17" font-weight="800" fill="${CYAN}" text-anchor="middle">${esc(row.points)}</text>
-<line x1="${lx}" y1="${ry+20}" x2="${lx+colW}" y2="${ry+20}" stroke="${BORDER}" stroke-width="1"/>`;
+    if (i < 3) body += `<rect x="${lx-4}" y="${ry+2}" width="${colW+8}" height="40" rx="6" fill="${CARD}"/>`;
+    body += `<text x="${lx+13}" y="${ry+26}" font-family="Arial,sans-serif" font-size="16" font-weight="900" fill="${rankColor}" text-anchor="middle">${esc(row.rank)}</text>
+<circle cx="${lx+52}" cy="${mid}" r="14" fill="${CARD}"/>
+<text x="${lx+72}" y="${mid+5}" font-family="Arial,sans-serif" font-size="15" font-weight="600" fill="${WHITE}">${esc(row.team||"—")}</text>
+<text x="${lx+colW-107}" y="${mid+5}" font-family="Arial,sans-serif" font-size="14" fill="${GRAY}" text-anchor="middle">${esc(row.played)}</text>
+<text x="${lx+colW-62}" y="${mid+5}" font-family="Arial,sans-serif" font-size="14" fill="${GRAY}" text-anchor="middle">${row.gd>0?"+"+row.gd:esc(row.gd)}</text>
+<text x="${lx+colW-17}" y="${mid+6}" font-family="Arial,sans-serif" font-size="17" font-weight="800" fill="${CYAN}" text-anchor="middle">${esc(row.points)}</text>
+<line x1="${lx}" y1="${ry+43}" x2="${lx+colW}" y2="${ry+43}" stroke="${BORDER}" stroke-width="1"/>`;
   }
 
   let ry2 = 296 + 44;
@@ -257,19 +263,21 @@ function buildMinimal(d) {
 <text x="${lx+colW-107}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${GOLD}" text-anchor="middle" letter-spacing="1">${lang==="ru"?"И":"O'"}</text>
 <text x="${lx+colW-62}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${GOLD}" text-anchor="middle" letter-spacing="1">${lang==="ru"?"С":"S"}</text>
 <text x="${lx+colW-17}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${GOLD}" text-anchor="middle" letter-spacing="1">${lang==="ru"?"О":"B"}</text>`;
-  y += 40;
+  y += 38;
 
   for (let i = 0; i < standings.length; i++) {
-    const row = standings[i], ry = y + i * 46;
+    const row = standings[i];
+    const ry  = y + i * 44;
+    const mid = ry + 22;
     const isTop = i === 0;
-    if (isTop) body += `<rect x="${lx-4}" y="${ry-24}" width="${colW+8}" height="44" rx="8" fill="${GOLD}" opacity="0.08"/>`;
-    body += `<text x="${lx+13}" y="${ry-1}" font-family="Arial,sans-serif" font-size="14" font-weight="800" fill="${isTop ? GOLD : GRAY}" text-anchor="middle">${esc(row.rank)}</text>
-<circle cx="${lx+52}" cy="${ry-5}" r="14" fill="${SOFT}"/>
-<text x="${lx+72}" y="${ry}" font-family="Arial,sans-serif" font-size="15" font-weight="600" fill="${CHARCOAL}">${esc(row.team||"—")}</text>
-<text x="${lx+colW-107}" y="${ry}" font-family="Arial,sans-serif" font-size="14" fill="${GRAY}" text-anchor="middle">${esc(row.played)}</text>
-<text x="${lx+colW-62}" y="${ry}" font-family="Arial,sans-serif" font-size="14" fill="${GRAY}" text-anchor="middle">${row.gd>0?"+"+row.gd:esc(row.gd)}</text>
-<text x="${lx+colW-17}" y="${ry}" font-family="Arial,sans-serif" font-size="17" font-weight="900" fill="${isTop ? GOLD : DARK}" text-anchor="middle">${esc(row.points)}</text>
-<line x1="${lx}" y1="${ry+20}" x2="${lx+colW}" y2="${ry+20}" stroke="${BORDER}" stroke-width="1"/>`;
+    if (isTop) body += `<rect x="${lx-4}" y="${ry+2}" width="${colW+8}" height="40" rx="8" fill="${GOLD}" opacity="0.08"/>`;
+    body += `<text x="${lx+13}" y="${ry+26}" font-family="Arial,sans-serif" font-size="14" font-weight="800" fill="${isTop ? GOLD : GRAY}" text-anchor="middle">${esc(row.rank)}</text>
+<circle cx="${lx+52}" cy="${mid}" r="14" fill="${SOFT}"/>
+<text x="${lx+72}" y="${mid+5}" font-family="Arial,sans-serif" font-size="15" font-weight="600" fill="${CHARCOAL}">${esc(row.team||"—")}</text>
+<text x="${lx+colW-107}" y="${mid+5}" font-family="Arial,sans-serif" font-size="14" fill="${GRAY}" text-anchor="middle">${esc(row.played)}</text>
+<text x="${lx+colW-62}" y="${mid+5}" font-family="Arial,sans-serif" font-size="14" fill="${GRAY}" text-anchor="middle">${row.gd>0?"+"+row.gd:esc(row.gd)}</text>
+<text x="${lx+colW-17}" y="${mid+6}" font-family="Arial,sans-serif" font-size="17" font-weight="900" fill="${isTop ? GOLD : DARK}" text-anchor="middle">${esc(row.points)}</text>
+<line x1="${lx}" y1="${ry+43}" x2="${lx+colW}" y2="${ry+43}" stroke="${BORDER}" stroke-width="1"/>`;
   }
 
   let ry2 = 296 + 44;
