@@ -1,548 +1,332 @@
-import satori, { init } from "satori";
-
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const TG = `https://api.telegram.org/bot${BOT_TOKEN}`;
 const W = 1080, H = 1350;
 
-// h() — lightweight JSX-like helper (no transpiler needed)
-function h(type, props, ...children) {
-  const flat = children.flat(Infinity).filter((c) => c != null && c !== false);
-  return { type, props: { ...props, children: flat.length === 1 ? flat[0] : flat.length === 0 ? undefined : flat } };
+function esc(s) {
+  return String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
-// ── font cache ────────────────────────────────────────────────────────────────
-let fontCache = null;
-async function getFont() {
-  if (fontCache) return fontCache;
-  const [r800, r600, r400] = await Promise.all([
-    fetch("https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuFuYAZ9hiJ-Ek-_EeA.woff"),
-    fetch("https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuGKYAZ9hiJ-Ek-_EeA.woff"),
-    fetch("https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiJ-Ek-_EeA.woff"),
-  ]);
-  fontCache = [
-    { name: "Inter", data: await r800.arrayBuffer(), weight: 800, style: "normal" },
-    { name: "Inter", data: await r600.arrayBuffer(), weight: 600, style: "normal" },
-    { name: "Inter", data: await r400.arrayBuffer(), weight: 400, style: "normal" },
-  ];
-  return fontCache;
-}
-
-// ── shared styles ─────────────────────────────────────────────────────────────
-const row   = (extra = {}) => ({ display: "flex", flexDirection: "row",  ...extra });
-const col   = (extra = {}) => ({ display: "flex", flexDirection: "column", ...extra });
-const abs   = (extra = {}) => ({ position: "absolute", ...extra });
-
 // ─────────────────────────────────────────────────────────────────────────────
-// THEME 1 — Stadium Dark  (dark blue + gold)
+// THEME 1: Classic  (Navy + Orange)
 // ─────────────────────────────────────────────────────────────────────────────
-function themeStadium(d, lang) {
+function buildClassic(d) {
+  const lang = d.lang || "uz";
   const standings = d.standings || [];
   const results   = d.results   || [];
   const top       = d.topPerformers || [];
-  const lname     = (d.leagueName || "").toUpperCase();
-  const lsize     = lname.length > 18 ? 52 : lname.length > 12 ? 64 : 76;
 
-  const GOLD  = "#F5C842";
-  const BLUE  = "#0B1A35";
-  const WHITE = "rgba(255,255,255,0.92)";
-  const GRAY  = "rgba(255,255,255,0.45)";
-  const SCORE = "#0B1A35";
-  const medals = ["#F5C842", "#B0B7C3", "#CD7F32"];
+  const NAVY = "#0D1B2A", ACCENT = "#F97316", WHITE = "#FFFFFF";
+  const GRAY = "#8A92A6", LIGHT = "#F7F8FA", BORDER = "#EEF0F4";
 
-  const SectionLabel = (title) =>
-    h("div", { style: row({ alignItems: "center", gap: 10, marginBottom: 14 }) },
-      h("div", { style: { width: 4, height: 22, background: GOLD, borderRadius: 2 } }),
-      h("div", { style: { fontSize: 12, fontWeight: 800, color: GOLD, letterSpacing: 3 } }, title.toUpperCase())
-    );
+  const pad = 60, colW = (W - pad * 2 - 44) / 2;
+  const lx = pad, rx = pad + colW + 44;
 
-  const StandingRow = (rowData, i) =>
-    h("div", { style: row({
-      alignItems: "center", padding: "9px 12px",
-      background: i < 3 ? "rgba(245,200,66,0.1)" : "rgba(255,255,255,0.04)",
-      borderRadius: 10, marginBottom: 5, gap: 10,
-    }) },
-      h("div", { style: row({
-        width: 28, height: 28, borderRadius: 6, flexShrink: 0,
-        background: i === 0 ? GOLD : i < 3 ? "rgba(245,200,66,0.5)" : "rgba(255,255,255,0.15)",
-        alignItems: "center", justifyContent: "center",
-        fontSize: 13, fontWeight: 800,
-        color: i === 0 ? SCORE : WHITE,
-      }) }, String(rowData.rank)),
-      h("div", { style: { flex: 1, fontSize: 14, fontWeight: 600, color: WHITE } }, rowData.team || "—"),
-      h("div", { style: { fontSize: 12, color: GRAY, width: 26, textAlign: "center" } }, String(rowData.played)),
-      h("div", { style: { fontSize: 12, color: GRAY, width: 32, textAlign: "center" } },
-        rowData.gd > 0 ? `+${rowData.gd}` : String(rowData.gd)),
-      h("div", { style: { fontSize: 18, fontWeight: 800, color: GOLD, width: 30, textAlign: "center" } },
-        String(rowData.points))
-    );
+  const secHeader = (x, y, title) =>
+    `<rect x="${x}" y="${y-22}" width="30" height="30" rx="6" fill="${ACCENT}"/>
+<text x="${x+40}" y="${y}" font-family="Arial,sans-serif" font-size="17" font-weight="800" fill="${NAVY}">${esc(title.toUpperCase())}</text>
+<line x1="${x}" y1="${y+8}" x2="${x+colW}" y2="${y+8}" stroke="${NAVY}" stroke-width="2"/>`;
 
-  const MatchCard = (m) =>
-    h("div", { style: col({
-      background: "rgba(255,255,255,0.06)", borderRadius: 12, marginBottom: 8,
-      border: "1px solid rgba(245,200,66,0.15)", overflow: "hidden",
-    }) },
-      (m.label || m.date) && h("div", { style: row({
-        justifyContent: "space-between", padding: "6px 12px",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
-      }) },
-        h("div", { style: { fontSize: 10, fontWeight: 700, color: GOLD, letterSpacing: 1 } },
-          (m.label || "").toUpperCase()),
-        h("div", { style: { fontSize: 10, color: GRAY } }, m.date || "")
-      ),
-      h("div", { style: row({ alignItems: "center", padding: "11px 12px", gap: 8 }) },
-        h("div", { style: { flex: 1, fontSize: 13, fontWeight: 600, color: WHITE, textAlign: "right" } }, m.home || "—"),
-        h("div", { style: row({
-          background: GOLD, borderRadius: 8, padding: "6px 12px",
-          fontSize: 15, fontWeight: 800, color: SCORE,
-          minWidth: 68, justifyContent: "center",
-        }) }, `${m.homeScore} : ${m.awayScore}`),
-        h("div", { style: { flex: 1, fontSize: 13, fontWeight: 600, color: WHITE } }, m.away || "—")
-      )
-    );
+  const lname = esc((d.leagueName || "").toUpperCase());
+  const lsize = lname.length > 18 ? 46 : lname.length > 12 ? 56 : 66;
+  let body = "";
 
-  const TopRow = (p, i) =>
-    h("div", { style: row({
-      alignItems: "center", padding: "9px 0",
-      borderBottom: "1px solid rgba(255,255,255,0.08)", gap: 10,
-    }) },
-      h("div", { style: row({
-        width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
-        background: i < 3 ? medals[i] : "rgba(255,255,255,0.15)",
-        alignItems: "center", justifyContent: "center",
-        fontSize: 13, fontWeight: 800, color: SCORE,
-      }) }, String(i + 1)),
-      h("div", { style: col({ flex: 1 }) },
-        h("div", { style: { fontSize: 14, fontWeight: 700, color: WHITE } }, p.name || "—"),
-        h("div", { style: { fontSize: 11, color: GRAY } }, p.team || "")
-      ),
-      h("div", { style: col({ alignItems: "flex-end" }) },
-        h("div", { style: { fontSize: 20, fontWeight: 800, color: GOLD } }, String(p.goals)),
-        h("div", { style: { fontSize: 9, color: GRAY, letterSpacing: 1 } }, lang === "ru" ? "ОЧК" : "BALL")
-      )
-    );
+  body += `<rect width="${W}" height="290" fill="${NAVY}"/>
+<polygon points="${W*0.52},0 ${W},0 ${W},290 ${W*0.45},290" fill="${ACCENT}" opacity="0.93"/>
+<text x="64" y="86" font-family="Arial,sans-serif" font-size="22" font-weight="600" fill="#FED7AA">${esc(lang==="ru"?"Сезон":"Mavsum")} · ${esc(d.season||"")}</text>
+<text x="64" y="${165+(66-lsize)}" font-family="Arial,sans-serif" font-size="${lsize}" font-weight="900" fill="${WHITE}">${lname}</text>
+<text x="64" y="240" font-family="Arial,sans-serif" font-size="28" font-weight="600" fill="rgba(255,255,255,0.9)">${esc(d.roundName||"")}</text>
+<rect y="290" width="${W}" height="6" fill="${ACCENT}"/>`;
 
-  return h("div", { style: col({
-    width: W, height: H,
-    background: "linear-gradient(160deg, #0B1A35 0%, #0D2147 40%, #091428 100%)",
-    fontFamily: "Inter", position: "relative", overflow: "hidden",
-  }) },
-    // glow top
-    h("div", { style: abs({ top: -200, left: "25%", width: 600, height: 500,
-      background: "radial-gradient(ellipse, rgba(30,80,180,0.5) 0%, transparent 70%)" }) }),
-    // spotlight left
-    h("div", { style: abs({ top: 0, left: "18%", width: 2, height: 300,
-      background: "linear-gradient(180deg, rgba(245,200,66,0.5) 0%, transparent 100%)",
-      transform: "rotate(-12deg)" }) }),
-    // spotlight right
-    h("div", { style: abs({ top: 0, right: "18%", width: 2, height: 300,
-      background: "linear-gradient(180deg, rgba(245,200,66,0.5) 0%, transparent 100%)",
-      transform: "rotate(12deg)" }) }),
+  let y = 296 + 44;
+  body += secHeader(lx, y, lang==="ru"?"Турнирная таблица":"Turnir jadvali");
+  y += 28;
+  body += `<text x="${lx}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">#</text>
+<text x="${lx+72}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${lang==="ru"?"КОМАНДА":"JAMOA"}</text>
+<text x="${lx+colW-114}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${lang==="ru"?"И":"O'"}</text>
+<text x="${lx+colW-70}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${lang==="ru"?"С":"S"}</text>
+<text x="${lx+colW-28}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${lang==="ru"?"О":"B"}</text>`;
+  y += 32;
 
-    // ── HERO ──
-    h("div", { style: col({
-      alignItems: "center", padding: "52px 60px 40px",
-      borderBottom: "1px solid rgba(245,200,66,0.2)", position: "relative",
-    }) },
-      // crown bars
-      h("div", { style: row({ gap: 5, marginBottom: 18, alignItems: "flex-end" }) },
-        ...[40, 54, 64, 54, 40].map((ht, i) =>
-          h("div", { key: i, style: {
-            width: 9, height: ht, borderRadius: "3px 3px 0 0",
-            background: i === 2 ? GOLD : `rgba(245,200,66,${0.25 + (i === 1 || i === 3 ? 0.25 : 0)})`,
-          } })
-        )
-      ),
-      h("div", { style: { fontSize: 12, color: GOLD, letterSpacing: 4, fontWeight: 600, marginBottom: 10 } },
-        `${lang === "ru" ? "СЕЗОН" : "MAVSUM"} · ${d.season || ""}`),
-      h("div", { style: row({ alignItems: "center", gap: 10, marginBottom: 14 }) },
-        h("div", { style: { width: 80, height: 1, background: "rgba(245,200,66,0.4)" } }),
-        h("div", { style: { width: 5, height: 5, background: GOLD, borderRadius: "50%" } }),
-        h("div", { style: { width: 80, height: 1, background: "rgba(245,200,66,0.4)" } })
-      ),
-      h("div", { style: {
-        fontSize: lsize, fontWeight: 800, color: WHITE,
-        textAlign: "center", letterSpacing: -1, lineHeight: 1.05,
-      } }, lname || "LIGA"),
-      h("div", { style: { fontSize: 22, fontWeight: 600, color: "rgba(255,255,255,0.55)", marginTop: 12 } },
-        d.roundName || "")
-    ),
+  for (let i = 0; i < standings.length; i++) {
+    const row = standings[i], ry = y + i * 46;
+    const bc = i === 0 ? ACCENT : i < 3 ? "#FB923C" : NAVY;
+    if (i < 3) body += `<rect x="${lx-4}" y="${ry-22}" width="${colW+8}" height="42" fill="${ACCENT}" opacity="0.05"/>`;
+    body += `<rect x="${lx}" y="${ry-18}" width="26" height="26" rx="5" fill="${bc}"/>
+<text x="${lx+13}" y="${ry-1}" font-family="Arial,sans-serif" font-size="13" font-weight="800" fill="${WHITE}" text-anchor="middle">${esc(row.rank)}</text>
+<circle cx="${lx+52}" cy="${ry-5}" r="14" fill="${BORDER}"/>
+<text x="${lx+72}" y="${ry}" font-family="Arial,sans-serif" font-size="15" font-weight="600" fill="${NAVY}">${esc(row.team||"—")}</text>
+<text x="${lx+colW-107}" y="${ry}" font-family="Arial,sans-serif" font-size="14" fill="${GRAY}" text-anchor="middle">${esc(row.played)}</text>
+<text x="${lx+colW-62}" y="${ry}" font-family="Arial,sans-serif" font-size="14" fill="${GRAY}" text-anchor="middle">${row.gd>0?"+"+row.gd:esc(row.gd)}</text>
+<text x="${lx+colW-17}" y="${ry}" font-family="Arial,sans-serif" font-size="17" font-weight="800" fill="${NAVY}" text-anchor="middle">${esc(row.points)}</text>
+<line x1="${lx}" y1="${ry+20}" x2="${lx+colW}" y2="${ry+20}" stroke="${BORDER}" stroke-width="1"/>`;
+  }
 
-    // ── BODY ──
-    h("div", { style: row({ flex: 1, padding: "32px 60px 16px", gap: 36 }) },
-      // LEFT standings
-      h("div", { style: col({ flex: 1 }) },
-        SectionLabel(lang === "ru" ? "Турнирная таблица" : "Turnir jadvali"),
-        h("div", { style: row({ justifyContent: "flex-end", gap: 8, marginBottom: 8 }) },
-          h("div", { style: { fontSize: 10, color: GRAY, width: 26, textAlign: "center", fontWeight: 700 } },
-            lang === "ru" ? "И" : "O'"),
-          h("div", { style: { fontSize: 10, color: GRAY, width: 32, textAlign: "center", fontWeight: 700 } },
-            lang === "ru" ? "С" : "S"),
-          h("div", { style: { fontSize: 10, color: GRAY, width: 30, textAlign: "center", fontWeight: 700 } },
-            lang === "ru" ? "О" : "B")
-        ),
-        ...standings.map((s, i) => StandingRow(s, i))
-      ),
-      // RIGHT results + top
-      h("div", { style: col({ flex: 1, gap: 28 }) },
-        h("div", { style: col({}) },
-          SectionLabel(lang === "ru" ? "Результаты" : "Natijalar"),
-          ...results.map(MatchCard)
-        ),
-        h("div", { style: col({}) },
-          SectionLabel(lang === "ru" ? "Лучшие игроки" : "Eng yaxshi o'yinchilar"),
-          ...top.map((p, i) => TopRow(p, i))
-        )
-      )
-    ),
+  let ry2 = 296 + 44;
+  body += secHeader(rx, ry2, lang==="ru"?"Результаты":"Natijalar");
+  ry2 += 28;
+  for (const m of results) {
+    const hasH = !!(m.label || m.date), cardH = hasH ? 74 : 56;
+    const cx = rx + colW / 2, sy = ry2 + (hasH ? 57 : 38);
+    body += `<rect x="${rx}" y="${ry2+4}" width="${colW}" height="${cardH}" rx="12" fill="${LIGHT}"/>`;
+    if (hasH) {
+      body += `<text x="${rx+14}" y="${ry2+22}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${esc((m.label||"").toUpperCase())}</text>`;
+      if (m.date) body += `<text x="${rx+colW-14}" y="${ry2+22}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}" text-anchor="end">${esc(m.date)}</text>`;
+    }
+    body += `<text x="${cx-48}" y="${sy}" font-family="Arial,sans-serif" font-size="15" font-weight="600" fill="${NAVY}" text-anchor="end">${esc(m.home||"—")}</text>
+<rect x="${cx-40}" y="${sy-18}" width="80" height="27" rx="7" fill="${NAVY}"/>
+<text x="${cx}" y="${sy}" font-family="Arial,sans-serif" font-size="15" font-weight="800" fill="${WHITE}" text-anchor="middle">${esc(m.homeScore)} : ${esc(m.awayScore)}</text>
+<text x="${cx+48}" y="${sy}" font-family="Arial,sans-serif" font-size="15" font-weight="600" fill="${NAVY}">${esc(m.away||"—")}</text>`;
+    ry2 += cardH + 12;
+  }
 
-    // ── FOOTER ──
-    h("div", { style: row({
-      justifyContent: "space-between", alignItems: "center",
-      padding: "14px 60px",
-      borderTop: "1px solid rgba(245,200,66,0.2)",
-      background: "rgba(0,0,0,0.35)",
-    }) },
-      h("div", { style: { fontSize: 11, color: GRAY, letterSpacing: 2 } }, "🏐 VOLEYBOL POSTER STUDIO"),
-      h("div", { style: { fontSize: 11, color: GRAY } },
-        new Date().toLocaleDateString(lang === "ru" ? "ru-RU" : "uz-UZ"))
-    )
-  );
+  ry2 += 16;
+  body += secHeader(rx, ry2, lang==="ru"?"Лучшие игроки":"Eng yaxshi o'yinchilar");
+  ry2 += 28;
+  const medalC = ["#E5A800","#9AA0AE","#9C5A1F"];
+  for (let i = 0; i < top.length; i++) {
+    const p = top[i], py = ry2 + i * 52, mc = i < 3 ? medalC[i] : NAVY;
+    body += `<circle cx="${rx+14}" cy="${py}" r="14" fill="${mc}"/>
+<text x="${rx+14}" y="${py+5}" font-family="Arial,sans-serif" font-size="12" font-weight="800" fill="${WHITE}" text-anchor="middle">${i+1}</text>
+<text x="${rx+36}" y="${py-2}" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="${NAVY}">${esc(p.name||"—")}</text>
+<text x="${rx+36}" y="${py+16}" font-family="Arial,sans-serif" font-size="12" fill="${GRAY}">${esc(p.team||"")}</text>
+<text x="${rx+colW-4}" y="${py+4}" font-family="Arial,sans-serif" font-size="22" font-weight="900" fill="${ACCENT}" text-anchor="end">${esc(p.goals)}</text>
+<text x="${rx+colW-4}" y="${py+18}" font-family="Arial,sans-serif" font-size="11" fill="${GRAY}" text-anchor="end">${lang==="ru"?"очк.":"ball"}</text>
+<line x1="${rx}" y1="${py+30}" x2="${rx+colW}" y2="${py+30}" stroke="${BORDER}" stroke-width="1"/>`;
+  }
+
+  body += `<rect y="${H-54}" width="${W}" height="54" fill="${NAVY}"/>
+<text x="${pad}" y="${H-18}" font-family="Arial,sans-serif" font-size="12" font-weight="600" fill="rgba(255,255,255,0.55)">Voleybol Poster Studio</text>
+<text x="${W-pad}" y="${H-18}" font-family="Arial,sans-serif" font-size="12" font-weight="600" fill="rgba(255,255,255,0.55)" text-anchor="end">${esc(new Date().toLocaleDateString(lang==="ru"?"ru-RU":"uz-UZ"))}</text>`;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><rect width="${W}" height="${H}" fill="${WHITE}"/>${body}</svg>`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// THEME 2 — Neon Sport
+// THEME 2: Dark Neon  (Black + Cyan + Magenta)
 // ─────────────────────────────────────────────────────────────────────────────
-function themeNeon(d, lang) {
+function buildDarkNeon(d) {
+  const lang = d.lang || "uz";
   const standings = d.standings || [];
   const results   = d.results   || [];
   const top       = d.topPerformers || [];
-  const lname     = (d.leagueName || "").toUpperCase();
-  const lsize     = lname.length > 18 ? 52 : lname.length > 12 ? 64 : 76;
 
-  const CYAN    = "#00E5FF";
-  const MAGENTA = "#FF2D78";
-  const BG      = "#07070F";
-  const WHITE   = "rgba(255,255,255,0.9)";
-  const GRAY    = "rgba(255,255,255,0.4)";
-  const CARD    = "rgba(255,255,255,0.04)";
-  const BORDER  = "rgba(255,255,255,0.07)";
-  const medals  = ["#FFD700", "#C0C0C0", "#CD7F32"];
+  const BG = "#0A0A0F", CARD = "#13131C", CYAN = "#00D9FF", MAGENTA = "#FF006E";
+  const WHITE = "#FFFFFF", GRAY = "#6B7280", BORDER = "#1E1E2E";
 
-  const SectionLabel = (title) =>
-    h("div", { style: row({ alignItems: "center", gap: 10, marginBottom: 14 }) },
-      h("div", { style: {
-        width: 28, height: 3, borderRadius: 2,
-        background: `linear-gradient(90deg, ${CYAN}, ${MAGENTA})`,
-      } }),
-      h("div", { style: { fontSize: 11, fontWeight: 800, color: WHITE, letterSpacing: 3 } }, title.toUpperCase())
-    );
+  const pad = 60, colW = (W - pad * 2 - 44) / 2;
+  const lx = pad, rx = pad + colW + 44;
 
-  const StandingRow = (rowData, i) => {
-    const rc = i === 0 ? CYAN : i < 3 ? MAGENTA : WHITE;
-    return h("div", { style: row({
-      alignItems: "center", padding: "9px 12px",
-      background: CARD, borderRadius: 8, marginBottom: 5,
-      border: `1px solid ${i < 3 ? "rgba(0,229,255,0.12)" : BORDER}`, gap: 10,
-    }) },
-      h("div", { style: { width: 22, fontSize: 14, fontWeight: 800, color: rc, textAlign: "center" } },
-        String(rowData.rank)),
-      h("div", { style: { flex: 1, fontSize: 14, fontWeight: 600, color: WHITE } }, rowData.team || "—"),
-      h("div", { style: { fontSize: 12, color: GRAY, width: 26, textAlign: "center" } }, String(rowData.played)),
-      h("div", { style: { fontSize: 12, color: GRAY, width: 32, textAlign: "center" } },
-        rowData.gd > 0 ? `+${rowData.gd}` : String(rowData.gd)),
-      h("div", { style: { fontSize: 17, fontWeight: 800, color: CYAN, width: 28, textAlign: "center" } },
-        String(rowData.points))
-    );
-  };
+  const secHeader = (x, y, title) =>
+    `<line x1="${x}" y1="${y-18}" x2="${x}" y2="${y+12}" stroke="${CYAN}" stroke-width="4" stroke-linecap="round"/>
+<text x="${x+16}" y="${y}" font-family="Arial,sans-serif" font-size="17" font-weight="800" fill="${WHITE}">${esc(title.toUpperCase())}</text>
+<line x1="${x}" y1="${y+10}" x2="${x+colW}" y2="${y+10}" stroke="${BORDER}" stroke-width="1"/>`;
 
-  const MatchCard = (m) =>
-    h("div", { style: col({
-      background: CARD, borderRadius: 10, marginBottom: 7,
-      border: `1px solid ${BORDER}`, overflow: "hidden",
-    }) },
-      (m.label || m.date) && h("div", { style: row({ justifyContent: "space-between", padding: "6px 12px" }) },
-        h("div", { style: { fontSize: 10, fontWeight: 700, color: CYAN, letterSpacing: 1 } },
-          (m.label || "").toUpperCase()),
-        h("div", { style: { fontSize: 10, color: GRAY } }, m.date || "")
-      ),
-      h("div", { style: row({ alignItems: "center", padding: "10px 12px", gap: 8 }) },
-        h("div", { style: { flex: 1, fontSize: 13, fontWeight: 600, color: WHITE, textAlign: "right" } }, m.home || "—"),
-        h("div", { style: row({
-          borderRadius: 7, padding: "5px 12px",
-          background: `linear-gradient(90deg, ${CYAN}, ${MAGENTA})`,
-          fontSize: 14, fontWeight: 800, color: BG,
-          minWidth: 66, justifyContent: "center",
-        }) }, `${m.homeScore} : ${m.awayScore}`),
-        h("div", { style: { flex: 1, fontSize: 13, fontWeight: 600, color: WHITE } }, m.away || "—")
-      )
-    );
+  const lname = esc((d.leagueName || "").toUpperCase());
+  const lsize = lname.length > 18 ? 46 : lname.length > 12 ? 56 : 66;
+  let body = "";
 
-  const TopRow = (p, i) =>
-    h("div", { style: row({
-      alignItems: "center", padding: "9px 0",
-      borderBottom: `1px solid ${BORDER}`, gap: 10,
-    }) },
-      h("div", { style: row({
-        width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
-        background: i < 3 ? medals[i] : "rgba(255,255,255,0.1)",
-        alignItems: "center", justifyContent: "center",
-        fontSize: 12, fontWeight: 800, color: "#000",
-      }) }, String(i + 1)),
-      h("div", { style: col({ flex: 1 }) },
-        h("div", { style: { fontSize: 14, fontWeight: 700, color: WHITE } }, p.name || "—"),
-        h("div", { style: { fontSize: 11, color: GRAY } }, p.team || "")
-      ),
-      h("div", { style: col({ alignItems: "flex-end" }) },
-        h("div", { style: { fontSize: 20, fontWeight: 800, color: CYAN } }, String(p.goals)),
-        h("div", { style: { fontSize: 9, color: GRAY, letterSpacing: 1 } }, lang === "ru" ? "ОЧК" : "BALL")
-      )
-    );
+  // Hero — full dark with cyan gradient overlay
+  body += `<defs>
+  <linearGradient id="neonHero" x1="0" y1="0" x2="${W}" y2="290" gradientUnits="userSpaceOnUse">
+    <stop offset="0%" stop-color="${CYAN}" stop-opacity="0.08"/>
+    <stop offset="50%" stop-color="${BG}" stop-opacity="0"/>
+    <stop offset="100%" stop-color="${MAGENTA}" stop-opacity="0.12"/>
+  </linearGradient>
+  <linearGradient id="neonAccent" x1="0" y1="0" x2="200" y2="0" gradientUnits="userSpaceOnUse">
+    <stop offset="0%" stop-color="${CYAN}"/>
+    <stop offset="100%" stop-color="${MAGENTA}"/>
+  </linearGradient>
+</defs>
+<rect width="${W}" height="290" fill="${BG}"/>
+<rect width="${W}" height="290" fill="url(#neonHero)"/>
+<rect x="64" y="72" width="180" height="3" rx="2" fill="url(#neonAccent)"/>
+<text x="64" y="62" font-family="Arial,sans-serif" font-size="20" font-weight="600" fill="${CYAN}" opacity="0.9">${esc(lang==="ru"?"Сезон":"Mavsum")} · ${esc(d.season||"")}</text>
+<text x="64" y="${155+(66-lsize)}" font-family="Arial,sans-serif" font-size="${lsize}" font-weight="900" fill="${WHITE}">${lname}</text>
+<text x="64" y="240" font-family="Arial,sans-serif" font-size="28" font-weight="600" fill="rgba(255,255,255,0.75)">${esc(d.roundName||"")}</text>
+<rect y="288" width="${W}" height="3" fill="url(#neonAccent)"/>`;
 
-  return h("div", { style: col({
-    width: W, height: H, background: BG,
-    fontFamily: "Inter", position: "relative", overflow: "hidden",
-  }) },
-    h("div", { style: abs({ top: -150, left: -100, width: 450, height: 450,
-      background: `radial-gradient(circle, rgba(0,229,255,0.13) 0%, transparent 70%)` }) }),
-    h("div", { style: abs({ top: -150, right: -100, width: 450, height: 450,
-      background: `radial-gradient(circle, rgba(255,45,120,0.1) 0%, transparent 70%)` }) }),
+  let y = 296 + 44;
+  body += secHeader(lx, y, lang==="ru"?"Турнирная таблица":"Turnir jadvali");
+  y += 28;
+  body += `<text x="${lx}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">#</text>
+<text x="${lx+72}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${lang==="ru"?"КОМАНДА":"JAMOA"}</text>
+<text x="${lx+colW-114}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${lang==="ru"?"И":"O'"}</text>
+<text x="${lx+colW-70}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${lang==="ru"?"С":"S"}</text>
+<text x="${lx+colW-28}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${lang==="ru"?"О":"B"}</text>`;
+  y += 32;
 
-    // ── HERO ──
-    h("div", { style: col({
-      alignItems: "center", padding: "50px 60px 38px",
-      borderBottom: `1px solid ${BORDER}`, position: "relative",
-    }) },
-      h("div", { style: {
-        width: 140, height: 3, borderRadius: 2, marginBottom: 22,
-        background: `linear-gradient(90deg, ${CYAN}, ${MAGENTA})`,
-      } }),
-      h("div", { style: { fontSize: 12, color: CYAN, letterSpacing: 4, fontWeight: 600, marginBottom: 14 } },
-        `${lang === "ru" ? "СЕЗОН" : "MAVSUM"} · ${d.season || ""}`),
-      h("div", { style: {
-        fontSize: lsize, fontWeight: 800, color: WHITE,
-        textAlign: "center", letterSpacing: -1, lineHeight: 1.05,
-      } }, lname || "LIGA"),
-      h("div", { style: { fontSize: 22, fontWeight: 600, color: GRAY, marginTop: 12 } }, d.roundName || ""),
-      h("div", { style: {
-        marginTop: 18, width: 100, height: 2, borderRadius: 1,
-        background: `linear-gradient(90deg, ${CYAN}, ${MAGENTA})`,
-      } })
-    ),
+  for (let i = 0; i < standings.length; i++) {
+    const row = standings[i], ry = y + i * 46;
+    const rankColor = i === 0 ? CYAN : i < 3 ? MAGENTA : GRAY;
+    if (i < 3) body += `<rect x="${lx-4}" y="${ry-22}" width="${colW+8}" height="42" rx="6" fill="${CARD}"/>`;
+    body += `<text x="${lx+13}" y="${ry-1}" font-family="Arial,sans-serif" font-size="16" font-weight="900" fill="${rankColor}" text-anchor="middle">${esc(row.rank)}</text>
+<circle cx="${lx+52}" cy="${ry-5}" r="14" fill="${CARD}"/>
+<text x="${lx+72}" y="${ry}" font-family="Arial,sans-serif" font-size="15" font-weight="600" fill="${WHITE}">${esc(row.team||"—")}</text>
+<text x="${lx+colW-107}" y="${ry}" font-family="Arial,sans-serif" font-size="14" fill="${GRAY}" text-anchor="middle">${esc(row.played)}</text>
+<text x="${lx+colW-62}" y="${ry}" font-family="Arial,sans-serif" font-size="14" fill="${GRAY}" text-anchor="middle">${row.gd>0?"+"+row.gd:esc(row.gd)}</text>
+<text x="${lx+colW-17}" y="${ry}" font-family="Arial,sans-serif" font-size="17" font-weight="800" fill="${CYAN}" text-anchor="middle">${esc(row.points)}</text>
+<line x1="${lx}" y1="${ry+20}" x2="${lx+colW}" y2="${ry+20}" stroke="${BORDER}" stroke-width="1"/>`;
+  }
 
-    // ── BODY ──
-    h("div", { style: row({ flex: 1, padding: "30px 60px 16px", gap: 34 }) },
-      h("div", { style: col({ flex: 1 }) },
-        SectionLabel(lang === "ru" ? "Турнирная таблица" : "Turnir jadvali"),
-        h("div", { style: row({ justifyContent: "flex-end", gap: 8, marginBottom: 8 }) },
-          h("div", { style: { fontSize: 10, color: GRAY, width: 26, textAlign: "center", fontWeight: 700 } },
-            lang === "ru" ? "И" : "O'"),
-          h("div", { style: { fontSize: 10, color: GRAY, width: 32, textAlign: "center", fontWeight: 700 } },
-            lang === "ru" ? "С" : "S"),
-          h("div", { style: { fontSize: 10, color: GRAY, width: 28, textAlign: "center", fontWeight: 700 } },
-            lang === "ru" ? "О" : "B")
-        ),
-        ...standings.map((s, i) => StandingRow(s, i))
-      ),
-      h("div", { style: col({ flex: 1, gap: 26 }) },
-        h("div", {},
-          SectionLabel(lang === "ru" ? "Результаты" : "Natijalar"),
-          ...results.map(MatchCard)
-        ),
-        h("div", {},
-          SectionLabel(lang === "ru" ? "Лучшие игроки" : "Eng yaxshi o'yinchilar"),
-          ...top.map((p, i) => TopRow(p, i))
-        )
-      )
-    ),
+  let ry2 = 296 + 44;
+  body += secHeader(rx, ry2, lang==="ru"?"Результаты":"Natijalar");
+  ry2 += 28;
+  for (const m of results) {
+    const hasH = !!(m.label || m.date), cardH = hasH ? 74 : 56;
+    const cx = rx + colW / 2, sy = ry2 + (hasH ? 57 : 38);
+    body += `<rect x="${rx}" y="${ry2+4}" width="${colW}" height="${cardH}" rx="12" fill="${CARD}"/>
+<rect x="${rx}" y="${ry2+4}" width="${colW}" height="${cardH}" rx="12" fill="none" stroke="${BORDER}" stroke-width="1"/>`;
+    if (hasH) {
+      body += `<text x="${rx+14}" y="${ry2+22}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${esc((m.label||"").toUpperCase())}</text>`;
+      if (m.date) body += `<text x="${rx+colW-14}" y="${ry2+22}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}" text-anchor="end">${esc(m.date)}</text>`;
+    }
+    body += `<text x="${cx-48}" y="${sy}" font-family="Arial,sans-serif" font-size="15" font-weight="600" fill="${WHITE}" text-anchor="end">${esc(m.home||"—")}</text>
+<rect x="${cx-40}" y="${sy-18}" width="80" height="27" rx="7" fill="url(#neonAccent)"/>
+<text x="${cx}" y="${sy}" font-family="Arial,sans-serif" font-size="15" font-weight="800" fill="${WHITE}" text-anchor="middle">${esc(m.homeScore)} : ${esc(m.awayScore)}</text>
+<text x="${cx+48}" y="${sy}" font-family="Arial,sans-serif" font-size="15" font-weight="600" fill="${WHITE}">${esc(m.away||"—")}</text>`;
+    ry2 += cardH + 12;
+  }
 
-    // ── FOOTER ──
-    h("div", { style: row({
-      justifyContent: "space-between", alignItems: "center",
-      padding: "13px 60px", borderTop: `1px solid ${BORDER}`,
-      background: "rgba(0,0,0,0.4)",
-    }) },
-      h("div", { style: { fontSize: 11, color: GRAY, letterSpacing: 2 } }, "🏐 VOLEYBOL POSTER STUDIO"),
-      h("div", { style: { fontSize: 11, color: GRAY } },
-        new Date().toLocaleDateString(lang === "ru" ? "ru-RU" : "uz-UZ"))
-    )
-  );
+  ry2 += 16;
+  body += secHeader(rx, ry2, lang==="ru"?"Лучшие игроки":"Eng yaxshi o'yinchilar");
+  ry2 += 28;
+  const medalC = ["#FFD700","#C0C0C0","#CD7F32"];
+  for (let i = 0; i < top.length; i++) {
+    const p = top[i], py = ry2 + i * 52;
+    body += `<circle cx="${rx+14}" cy="${py}" r="14" fill="${i < 3 ? medalC[i] : CARD}" stroke="${BORDER}" stroke-width="1"/>
+<text x="${rx+14}" y="${py+5}" font-family="Arial,sans-serif" font-size="12" font-weight="800" fill="${BG}" text-anchor="middle">${i+1}</text>
+<text x="${rx+36}" y="${py-2}" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="${WHITE}">${esc(p.name||"—")}</text>
+<text x="${rx+36}" y="${py+16}" font-family="Arial,sans-serif" font-size="12" fill="${GRAY}">${esc(p.team||"")}</text>
+<text x="${rx+colW-4}" y="${py+4}" font-family="Arial,sans-serif" font-size="22" font-weight="900" fill="${CYAN}" text-anchor="end">${esc(p.goals)}</text>
+<text x="${rx+colW-4}" y="${py+18}" font-family="Arial,sans-serif" font-size="11" fill="${GRAY}" text-anchor="end">${lang==="ru"?"очк.":"ball"}</text>
+<line x1="${rx}" y1="${py+30}" x2="${rx+colW}" y2="${py+30}" stroke="${BORDER}" stroke-width="1"/>`;
+  }
+
+  body += `<rect y="${H-54}" width="${W}" height="54" fill="${CARD}"/>
+<rect y="${H-54}" width="${W}" height="1" fill="${BORDER}"/>
+<text x="${pad}" y="${H-18}" font-family="Arial,sans-serif" font-size="12" font-weight="600" fill="${GRAY}">Voleybol Poster Studio</text>
+<text x="${W-pad}" y="${H-18}" font-family="Arial,sans-serif" font-size="12" font-weight="600" fill="${GRAY}" text-anchor="end">${esc(new Date().toLocaleDateString(lang==="ru"?"ru-RU":"uz-UZ"))}</text>`;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><rect width="${W}" height="${H}" fill="${BG}"/>${body}</svg>`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// THEME 3 — Minimal Gold
+// THEME 3: Minimal Gold  (White + Gold + Charcoal)
 // ─────────────────────────────────────────────────────────────────────────────
-function themeMinimal(d, lang) {
+function buildMinimal(d) {
+  const lang = d.lang || "uz";
   const standings = d.standings || [];
   const results   = d.results   || [];
   const top       = d.topPerformers || [];
-  const lname     = (d.leagueName || "").toUpperCase();
-  const lsize     = lname.length > 18 ? 52 : lname.length > 12 ? 64 : 76;
 
-  const GOLD    = "#C9962A";
-  const DARK    = "#12121E";
-  const CHARCOAL = "#1E1E2E";
-  const BG      = "#F8F7F4";
-  const WHITE   = "#FFFFFF";
-  const GRAY    = "#9199A8";
-  const BORDER  = "#EAECF0";
-  const medals  = ["#C9962A", "#9AA0AE", "#A0724A"];
+  const BG = "#FAFAFA", CHARCOAL = "#1A1A2E", GOLD = "#D4A017", SOFT = "#F0F0F0";
+  const WHITE = "#FFFFFF", GRAY = "#9CA3AF", BORDER = "#E5E7EB", DARK = "#374151";
 
-  const SectionLabel = (title) =>
-    h("div", { style: row({ alignItems: "center", gap: 10, marginBottom: 14 }) },
-      h("div", { style: { fontSize: 11, fontWeight: 800, color: GOLD, letterSpacing: 4 } }, title.toUpperCase()),
-      h("div", { style: { flex: 1, height: 1, background: `${GOLD}44` } })
-    );
+  const pad = 60, colW = (W - pad * 2 - 44) / 2;
+  const lx = pad, rx = pad + colW + 44;
 
-  const StandingRow = (rowData, i) =>
-    h("div", { style: row({
-      alignItems: "center", padding: "10px 12px",
-      background: i === 0 ? `${GOLD}0D` : WHITE,
-      borderRadius: 10, marginBottom: 6, gap: 10,
-      border: `1px solid ${i === 0 ? `${GOLD}33` : BORDER}`,
-    }) },
-      h("div", { style: row({
-        width: 26, height: 26, borderRadius: 6, flexShrink: 0,
-        background: i === 0 ? GOLD : i < 3 ? `${GOLD}33` : "#F0F1F3",
-        alignItems: "center", justifyContent: "center",
-        fontSize: 13, fontWeight: 800,
-        color: i === 0 ? WHITE : i < 3 ? GOLD : GRAY,
-      }) }, String(rowData.rank)),
-      h("div", { style: { flex: 1, fontSize: 14, fontWeight: 600, color: DARK } }, rowData.team || "—"),
-      h("div", { style: { fontSize: 12, color: GRAY, width: 26, textAlign: "center" } }, String(rowData.played)),
-      h("div", { style: { fontSize: 12, color: GRAY, width: 32, textAlign: "center" } },
-        rowData.gd > 0 ? `+${rowData.gd}` : String(rowData.gd)),
-      h("div", { style: {
-        fontSize: 18, fontWeight: 800, width: 30, textAlign: "center",
-        color: i === 0 ? GOLD : DARK,
-      } }, String(rowData.points))
-    );
+  const secHeader = (x, y, title) =>
+    `<text x="${x}" y="${y}" font-family="Georgia,serif" font-size="13" font-weight="700" fill="${GOLD}" letter-spacing="3">${esc(title.toUpperCase())}</text>
+<line x1="${x}" y1="${y+10}" x2="${x+colW}" y2="${y+10}" stroke="${GOLD}" stroke-width="1.5" opacity="0.4"/>`;
 
-  const MatchCard = (m) =>
-    h("div", { style: col({
-      background: WHITE, borderRadius: 12, marginBottom: 8,
-      border: `1px solid ${BORDER}`, overflow: "hidden",
-    }) },
-      (m.label || m.date) && h("div", { style: row({
-        justifyContent: "space-between", padding: "6px 12px",
-        background: "#F8F7F4", borderBottom: `1px solid ${BORDER}`,
-      }) },
-        h("div", { style: { fontSize: 10, fontWeight: 700, color: GOLD, letterSpacing: 1 } },
-          (m.label || "").toUpperCase()),
-        h("div", { style: { fontSize: 10, color: GRAY } }, m.date || "")
-      ),
-      h("div", { style: row({ alignItems: "center", padding: "11px 12px", gap: 8 }) },
-        h("div", { style: { flex: 1, fontSize: 13, fontWeight: 600, color: DARK, textAlign: "right" } }, m.home || "—"),
-        h("div", { style: row({
-          background: CHARCOAL, borderRadius: 8, padding: "6px 12px",
-          fontSize: 14, fontWeight: 800, color: WHITE,
-          minWidth: 66, justifyContent: "center",
-        }) }, `${m.homeScore} : ${m.awayScore}`),
-        h("div", { style: { flex: 1, fontSize: 13, fontWeight: 600, color: DARK } }, m.away || "—")
-      )
-    );
+  const lname = esc((d.leagueName || "").toUpperCase());
+  const lsize = lname.length > 18 ? 46 : lname.length > 12 ? 56 : 66;
+  let body = "";
 
-  const TopRow = (p, i) =>
-    h("div", { style: row({
-      alignItems: "center", padding: "9px 0",
-      borderBottom: `1px solid ${BORDER}`, gap: 10,
-    }) },
-      h("div", { style: row({
-        width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
-        background: i < 3 ? medals[i] : "#F0F1F3",
-        alignItems: "center", justifyContent: "center",
-        fontSize: 12, fontWeight: 800, color: i < 3 ? WHITE : GRAY,
-      }) }, String(i + 1)),
-      h("div", { style: col({ flex: 1 }) },
-        h("div", { style: { fontSize: 14, fontWeight: 700, color: DARK } }, p.name || "—"),
-        h("div", { style: { fontSize: 11, color: GRAY } }, p.team || "")
-      ),
-      h("div", { style: col({ alignItems: "flex-end" }) },
-        h("div", { style: { fontSize: 20, fontWeight: 800, color: GOLD } }, String(p.goals)),
-        h("div", { style: { fontSize: 9, color: GRAY, letterSpacing: 1 } }, lang === "ru" ? "ОЧК" : "BALL")
-      )
-    );
+  // Hero — clean white with gold accent bar
+  body += `<rect width="${W}" height="290" fill="${CHARCOAL}"/>
+<rect x="64" y="60" width="4" height="180" rx="2" fill="${GOLD}"/>
+<text x="88" y="106" font-family="Georgia,serif" font-size="16" fill="${GOLD}" opacity="0.8" letter-spacing="4">${esc(lang==="ru"?"СЕЗОН":"MAVSUM")} ${esc(d.season||"")}</text>
+<text x="88" y="${175+(66-lsize)}" font-family="Arial,sans-serif" font-size="${lsize}" font-weight="900" fill="${WHITE}" letter-spacing="-1">${lname}</text>
+<text x="88" y="240" font-family="Georgia,serif" font-size="24" font-weight="400" fill="rgba(255,255,255,0.65)" font-style="italic">${esc(d.roundName||"")}</text>
+<line x1="0" y1="290" x2="${W}" y2="290" stroke="${GOLD}" stroke-width="2"/>`;
 
-  return h("div", { style: col({
-    width: W, height: H, background: BG,
-    fontFamily: "Inter", position: "relative",
-  }) },
-    // ── HERO dark panel ──
-    h("div", { style: col({
-      alignItems: "center", padding: "48px 60px 38px",
-      background: `linear-gradient(150deg, ${CHARCOAL} 0%, ${DARK} 100%)`,
-      position: "relative", overflow: "hidden",
-    }) },
-      h("div", { style: abs({ top: -50, right: -50, width: 180, height: 180,
-        border: `1px solid ${GOLD}22`, borderRadius: "50%" }) }),
-      h("div", { style: abs({ top: -25, right: -25, width: 100, height: 100,
-        border: `1px solid ${GOLD}33`, borderRadius: "50%" }) }),
-      h("div", { style: { fontSize: 11, color: GOLD, letterSpacing: 5, fontWeight: 600, marginBottom: 14 } },
-        `${lang === "ru" ? "СЕЗОН" : "MAVSUM"} · ${d.season || ""}`),
-      h("div", { style: { width: 60, height: 2, background: GOLD, borderRadius: 1, marginBottom: 18 } }),
-      h("div", { style: {
-        fontSize: lsize, fontWeight: 800, color: WHITE,
-        textAlign: "center", lineHeight: 1.05, letterSpacing: -1,
-      } }, lname || "LIGA"),
-      h("div", { style: { fontSize: 20, fontWeight: 400, color: "rgba(255,255,255,0.5)", marginTop: 14 } },
-        d.roundName || "")
-    ),
-    // gold strip
-    h("div", { style: { height: 4, background: `linear-gradient(90deg, ${GOLD}, #E8B84B, ${GOLD})` } }),
+  let y = 296 + 44;
+  body += secHeader(lx, y, lang==="ru"?"Турнирная таблица":"Turnir jadvali");
+  y += 28;
+  body += `<text x="${lx}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">#</text>
+<text x="${lx+72}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${lang==="ru"?"КОМАНДА":"JAMOA"}</text>
+<text x="${lx+colW-114}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${lang==="ru"?"И":"O'"}</text>
+<text x="${lx+colW-70}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${lang==="ru"?"С":"S"}</text>
+<text x="${lx+colW-28}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${lang==="ru"?"О":"B"}</text>`;
+  y += 32;
 
-    // ── BODY ──
-    h("div", { style: row({ flex: 1, padding: "30px 60px 16px", gap: 34 }) },
-      h("div", { style: col({ flex: 1 }) },
-        SectionLabel(lang === "ru" ? "Турнирная таблица" : "Turnir jadvali"),
-        h("div", { style: row({ justifyContent: "flex-end", gap: 8, marginBottom: 8 }) },
-          h("div", { style: { fontSize: 10, color: GRAY, width: 26, textAlign: "center", fontWeight: 700 } },
-            lang === "ru" ? "И" : "O'"),
-          h("div", { style: { fontSize: 10, color: GRAY, width: 32, textAlign: "center", fontWeight: 700 } },
-            lang === "ru" ? "С" : "S"),
-          h("div", { style: { fontSize: 10, color: GRAY, width: 30, textAlign: "center", fontWeight: 700 } },
-            lang === "ru" ? "О" : "B")
-        ),
-        ...standings.map((s, i) => StandingRow(s, i))
-      ),
-      h("div", { style: col({ flex: 1, gap: 26 }) },
-        h("div", {},
-          SectionLabel(lang === "ru" ? "Результаты" : "Natijalar"),
-          ...results.map(MatchCard)
-        ),
-        h("div", {},
-          SectionLabel(lang === "ru" ? "Лучшие игроки" : "Eng yaxshi o'yinchilar"),
-          ...top.map((p, i) => TopRow(p, i))
-        )
-      )
-    ),
+  for (let i = 0; i < standings.length; i++) {
+    const row = standings[i], ry = y + i * 46;
+    const isTop = i === 0;
+    if (isTop) body += `<rect x="${lx-4}" y="${ry-24}" width="${colW+8}" height="44" rx="8" fill="${GOLD}" opacity="0.08"/>`;
+    body += `<text x="${lx+13}" y="${ry-1}" font-family="Arial,sans-serif" font-size="14" font-weight="800" fill="${isTop ? GOLD : GRAY}" text-anchor="middle">${esc(row.rank)}</text>
+<circle cx="${lx+52}" cy="${ry-5}" r="14" fill="${SOFT}"/>
+<text x="${lx+72}" y="${ry}" font-family="Arial,sans-serif" font-size="15" font-weight="600" fill="${CHARCOAL}">${esc(row.team||"—")}</text>
+<text x="${lx+colW-107}" y="${ry}" font-family="Arial,sans-serif" font-size="14" fill="${GRAY}" text-anchor="middle">${esc(row.played)}</text>
+<text x="${lx+colW-62}" y="${ry}" font-family="Arial,sans-serif" font-size="14" fill="${GRAY}" text-anchor="middle">${row.gd>0?"+"+row.gd:esc(row.gd)}</text>
+<text x="${lx+colW-17}" y="${ry}" font-family="Arial,sans-serif" font-size="17" font-weight="900" fill="${isTop ? GOLD : DARK}" text-anchor="middle">${esc(row.points)}</text>
+<line x1="${lx}" y1="${ry+20}" x2="${lx+colW}" y2="${ry+20}" stroke="${BORDER}" stroke-width="1"/>`;
+  }
 
-    // ── FOOTER ──
-    h("div", { style: row({
-      justifyContent: "space-between", alignItems: "center",
-      padding: "13px 60px", background: DARK,
-    }) },
-      h("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.35)", letterSpacing: 2 } },
-        "🏐 VOLEYBOL POSTER STUDIO"),
-      h("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.35)" } },
-        new Date().toLocaleDateString(lang === "ru" ? "ru-RU" : "uz-UZ"))
-    )
-  );
+  let ry2 = 296 + 44;
+  body += secHeader(rx, ry2, lang==="ru"?"Результаты":"Natijalar");
+  ry2 += 28;
+  for (const m of results) {
+    const hasH = !!(m.label || m.date), cardH = hasH ? 74 : 56;
+    const cx = rx + colW / 2, sy = ry2 + (hasH ? 57 : 38);
+    body += `<rect x="${rx}" y="${ry2+4}" width="${colW}" height="${cardH}" rx="10" fill="${WHITE}" stroke="${BORDER}" stroke-width="1.5"/>`;
+    if (hasH) {
+      body += `<text x="${rx+14}" y="${ry2+22}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${esc((m.label||"").toUpperCase())}</text>`;
+      if (m.date) body += `<text x="${rx+colW-14}" y="${ry2+22}" font-family="Arial,sans-serif" font-size="11" fill="${GRAY}" text-anchor="end">${esc(m.date)}</text>`;
+    }
+    body += `<text x="${cx-48}" y="${sy}" font-family="Arial,sans-serif" font-size="15" font-weight="600" fill="${CHARCOAL}" text-anchor="end">${esc(m.home||"—")}</text>
+<rect x="${cx-38}" y="${sy-18}" width="76" height="26" rx="6" fill="${CHARCOAL}"/>
+<text x="${cx}" y="${sy}" font-family="Arial,sans-serif" font-size="14" font-weight="800" fill="${WHITE}" text-anchor="middle">${esc(m.homeScore)} : ${esc(m.awayScore)}</text>
+<text x="${cx+48}" y="${sy}" font-family="Arial,sans-serif" font-size="15" font-weight="600" fill="${CHARCOAL}">${esc(m.away||"—")}</text>`;
+    ry2 += cardH + 12;
+  }
+
+  ry2 += 16;
+  body += secHeader(rx, ry2, lang==="ru"?"Лучшие игроки":"Eng yaxshi o'yinchilar");
+  ry2 += 28;
+  const medalC = ["#D4A017","#9AA0AE","#9C5A1F"];
+  for (let i = 0; i < top.length; i++) {
+    const p = top[i], py = ry2 + i * 52, mc = i < 3 ? medalC[i] : SOFT;
+    body += `<circle cx="${rx+14}" cy="${py}" r="14" fill="${mc}"/>
+<text x="${rx+14}" y="${py+5}" font-family="Arial,sans-serif" font-size="12" font-weight="800" fill="${WHITE}" text-anchor="middle">${i+1}</text>
+<text x="${rx+36}" y="${py-2}" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="${CHARCOAL}">${esc(p.name||"—")}</text>
+<text x="${rx+36}" y="${py+16}" font-family="Arial,sans-serif" font-size="12" fill="${GRAY}">${esc(p.team||"")}</text>
+<text x="${rx+colW-4}" y="${py+4}" font-family="Arial,sans-serif" font-size="22" font-weight="900" fill="${GOLD}" text-anchor="end">${esc(p.goals)}</text>
+<text x="${rx+colW-4}" y="${py+18}" font-family="Arial,sans-serif" font-size="11" fill="${GRAY}" text-anchor="end">${lang==="ru"?"очк.":"ball"}</text>
+<line x1="${rx}" y1="${py+30}" x2="${rx+colW}" y2="${py+30}" stroke="${BORDER}" stroke-width="1"/>`;
+  }
+
+  body += `<line x1="0" y1="${H-54}" x2="${W}" y2="${H-54}" stroke="${GOLD}" stroke-width="1" opacity="0.4"/>
+<rect y="${H-53}" width="${W}" height="53" fill="${CHARCOAL}"/>
+<text x="${pad}" y="${H-18}" font-family="Georgia,serif" font-size="12" fill="rgba(255,255,255,0.45)">Voleybol Poster Studio</text>
+<text x="${W-pad}" y="${H-18}" font-family="Georgia,serif" font-size="12" fill="rgba(255,255,255,0.45)" text-anchor="end">${esc(new Date().toLocaleDateString(lang==="ru"?"ru-RU":"uz-UZ"))}</text>`;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><rect width="${W}" height="${H}" fill="${BG}"/>${body}</svg>`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-async function buildSVG(d) {
-  const fonts = await getFont();
-  const lang  = d.lang || "uz";
-  const theme = d.theme || "stadium";
-
-  let element;
-  if (theme === "neon")         element = themeNeon(d, lang);
-  else if (theme === "minimal") element = themeMinimal(d, lang);
-  else                          element = themeStadium(d, lang);
-
-  return satori(element, { width: W, height: H, fonts });
+export function buildSVG(d) {
+  const theme = d.theme || "classic";
+  if (theme === "neon")    return buildDarkNeon(d);
+  if (theme === "minimal") return buildMinimal(d);
+  return buildClassic(d);
 }
 
-// ── handler ───────────────────────────────────────────────────────────────────
+async function sendDocument(chatId, svgBuffer, caption) {
+  const form = new FormData();
+  form.append("chat_id", String(chatId));
+  if (caption) form.append("caption", caption);
+  form.append("document", new Blob([svgBuffer], { type: "image/svg+xml" }), "poster.svg");
+  const res = await fetch(`${TG}/sendDocument`, { method: "POST", body: form });
+  return res.json();
+}
+
+// ── handler ──────────────────────────────────────────────────────────────────
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -554,18 +338,16 @@ export default async function handler(req, res) {
     const { getSvg, reportData, lang, theme } = req.body;
     if (!reportData) return res.status(400).json({ ok: false, error: "Missing reportData" });
 
-    const svgStr = await buildSVG({ ...reportData, lang: lang || "uz", theme: theme || "stadium" });
+    const svgStr = buildSVG({ ...reportData, lang: lang || "uz", theme: theme || "classic" });
 
     if (getSvg) return res.status(200).json({ ok: true, svg: svgStr });
 
     const { chatId } = req.body;
     if (!chatId) return res.status(400).json({ ok: false, error: "Missing chatId" });
-    const form = new FormData();
-    form.append("chat_id", String(chatId));
-    form.append("caption", `🏐 ${reportData.leagueName || "Poster"}${reportData.roundName ? " — " + reportData.roundName : ""}`);
-    form.append("document", new Blob([Buffer.from(svgStr)], { type: "image/svg+xml" }), "poster.svg");
-    const r = await fetch(`${TG}/sendDocument`, { method: "POST", body: form });
-    const result = await r.json();
+    const svgBuf = Buffer.from(svgStr, "utf8");
+    const caption = `🏐 ${reportData.leagueName || "Poster"}${reportData.roundName ? " — " + reportData.roundName : ""}`;
+    const result  = await sendDocument(String(chatId), svgBuf, caption);
+
     if (result.ok) res.status(200).json({ ok: true });
     else res.status(200).json({ ok: false, error: result.description });
   } catch (e) {
