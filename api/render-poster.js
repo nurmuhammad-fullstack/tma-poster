@@ -36,7 +36,6 @@ function buildClassic(d) {
 
   body += `<rect width="${W}" height="290" fill="${NAVY}"/>
 <polygon points="${W*0.52},0 ${W},0 ${W},290 ${W*0.45},290" fill="${ACCENT}" opacity="0.93"/>
-<text x="64" y="86" font-family="Arial,sans-serif" font-size="22" font-weight="600" fill="#FED7AA">${esc(lang==="ru"?"Сезон":"Mavsum")} · ${esc(d.season||"")}</text>
 <text x="64" y="${165+(66-lsize)}" font-family="Arial,sans-serif" font-size="${lsize}" font-weight="900" fill="${WHITE}">${lname}</text>
 <text x="64" y="240" font-family="Arial,sans-serif" font-size="28" font-weight="600" fill="rgba(255,255,255,0.9)">${esc(d.roundName||"")}</text>
 <rect y="290" width="${W}" height="6" fill="${ACCENT}"/>`;
@@ -146,7 +145,6 @@ function buildDarkNeon(d) {
 <rect width="${W}" height="290" fill="${BG}"/>
 <rect width="${W}" height="290" fill="url(#neonHero)"/>
 <rect x="64" y="72" width="180" height="3" rx="2" fill="url(#neonAccent)"/>
-<text x="64" y="62" font-family="Arial,sans-serif" font-size="20" font-weight="600" fill="${CYAN}" opacity="0.9">${esc(lang==="ru"?"Сезон":"Mavsum")} · ${esc(d.season||"")}</text>
 <text x="64" y="${155+(66-lsize)}" font-family="Arial,sans-serif" font-size="${lsize}" font-weight="900" fill="${WHITE}">${lname}</text>
 <text x="64" y="240" font-family="Arial,sans-serif" font-size="28" font-weight="600" fill="rgba(255,255,255,0.75)">${esc(d.roundName||"")}</text>
 <rect y="288" width="${W}" height="3" fill="url(#neonAccent)"/>`;
@@ -244,7 +242,6 @@ function buildMinimal(d) {
   // Hero — clean white with gold accent bar
   body += `<rect width="${W}" height="290" fill="${CHARCOAL}"/>
 <rect x="64" y="60" width="4" height="180" rx="2" fill="${GOLD}"/>
-<text x="88" y="106" font-family="Georgia,serif" font-size="16" fill="${GOLD}" opacity="0.8" letter-spacing="4">${esc(lang==="ru"?"СЕЗОН":"MAVSUM")} ${esc(d.season||"")}</text>
 <text x="88" y="${175+(66-lsize)}" font-family="Arial,sans-serif" font-size="${lsize}" font-weight="900" fill="${WHITE}" letter-spacing="-1">${lname}</text>
 <text x="88" y="240" font-family="Georgia,serif" font-size="24" font-weight="400" fill="rgba(255,255,255,0.65)" font-style="italic">${esc(d.roundName||"")}</text>
 <line x1="0" y1="290" x2="${W}" y2="290" stroke="${GOLD}" stroke-width="2"/>`;
