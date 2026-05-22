@@ -10,6 +10,39 @@ function esc(s) {
     .replace(/"/g, "&quot;");
 }
 
+// Inline SVG icon paths, scaled to fit a ~16×16 area inside a 30×30 rect
+// All paths use translate(ix, iy) where ix,iy is the top-left of the icon inside the rect
+function iconPath(type, ix, iy, color) {
+  const t = `translate(${ix},${iy})`;
+  if (type === "trophy") {
+    // Trophy cup: simplified cup shape
+    return `<g transform="${t}">
+<path d="M3 1h10v7a5 5 0 0 1-10 0V1z" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M1 2h2M13 2h2" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M1 2c0 3 1.5 5 3 5" fill="none" stroke="${color}" stroke-width="1.4" stroke-linecap="round"/>
+<path d="M15 2c0 3-1.5 5-3 5" fill="none" stroke="${color}" stroke-width="1.4" stroke-linecap="round"/>
+<line x1="8" y1="12" x2="8" y2="15" stroke="${color}" stroke-width="1.5" stroke-linecap="round"/>
+<line x1="5" y1="15" x2="11" y2="15" stroke="${color}" stroke-width="1.5" stroke-linecap="round"/>
+</g>`;
+  }
+  if (type === "ball") {
+    // Volleyball: circle with curved lines
+    return `<g transform="${t}">
+<circle cx="8" cy="8" r="6.5" fill="none" stroke="${color}" stroke-width="1.5"/>
+<path d="M2 8 Q5 5 8 8 Q11 11 14 8" fill="none" stroke="${color}" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M5 2.5 Q6 6 5 9.5" fill="none" stroke="${color}" stroke-width="1.2" stroke-linecap="round"/>
+<path d="M11 2.5 Q10 6 11 9.5" fill="none" stroke="${color}" stroke-width="1.2" stroke-linecap="round"/>
+</g>`;
+  }
+  if (type === "star") {
+    // 5-point star
+    return `<g transform="${t}">
+<polygon points="8,1.5 9.8,6 14.5,6 10.8,8.8 12.2,13.5 8,10.5 3.8,13.5 5.2,8.8 1.5,6 6.2,6" fill="${color}" opacity="0.9"/>
+</g>`;
+  }
+  return "";
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // THEME 1: Classic  (Navy + Orange)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -25,8 +58,9 @@ function buildClassic(d) {
   const pad = 60, colW = (W - pad * 2 - 44) / 2;
   const lx = pad, rx = pad + colW + 44;
 
-  const secHeader = (x, y, title) =>
+  const secHeader = (x, y, title, icon) =>
     `<rect x="${x}" y="${y-22}" width="30" height="30" rx="6" fill="${ACCENT}"/>
+${iconPath(icon, x+7, y-15, "#fff")}
 <text x="${x+40}" y="${y}" font-family="Arial,sans-serif" font-size="17" font-weight="800" fill="${NAVY}">${esc(title.toUpperCase())}</text>
 <line x1="${x}" y1="${y+8}" x2="${x+colW}" y2="${y+8}" stroke="${NAVY}" stroke-width="2"/>`;
 
@@ -41,7 +75,7 @@ function buildClassic(d) {
 <rect y="290" width="${W}" height="6" fill="${ACCENT}"/>`;
 
   let y = 296 + 44;
-  body += secHeader(lx, y, lang==="ru"?"Турнирная таблица":"Turnir jadvali");
+  body += secHeader(lx, y, lang==="ru"?"Турнирная таблица":"Turnir jadvali", "trophy");
   y += 28;
   // header row
   body += `<rect x="${lx-8}" y="${y}" width="${colW+16}" height="30" rx="6" fill="${NAVY}" opacity="0.07"/>
@@ -70,7 +104,7 @@ function buildClassic(d) {
   }
 
   let ry2 = 296 + 44;
-  body += secHeader(rx, ry2, lang==="ru"?"Результаты":"Natijalar");
+  body += secHeader(rx, ry2, lang==="ru"?"Результаты":"Natijalar", "ball");
   ry2 += 28;
   for (const m of results) {
     const hasH = !!(m.label || m.date), cardH = hasH ? 74 : 56;
@@ -90,7 +124,7 @@ function buildClassic(d) {
   }
 
   ry2 += 16;
-  body += secHeader(rx, ry2, lang==="ru"?"Лучшие игроки":"Eng yaxshi o'yinchilar");
+  body += secHeader(rx, ry2, lang==="ru"?"Лучшие игроки":"Eng yaxshi o'yinchilar", "star");
   ry2 += 28;
   const medalC = ["#E5A800","#9AA0AE","#9C5A1F"];
   for (let i = 0; i < top.length; i++) {
@@ -126,9 +160,11 @@ function buildDarkNeon(d) {
   const pad = 60, colW = (W - pad * 2 - 44) / 2;
   const lx = pad, rx = pad + colW + 44;
 
-  const secHeader = (x, y, title) =>
-    `<line x1="${x}" y1="${y-18}" x2="${x}" y2="${y+12}" stroke="${CYAN}" stroke-width="4" stroke-linecap="round"/>
-<text x="${x+16}" y="${y}" font-family="Arial,sans-serif" font-size="17" font-weight="800" fill="${WHITE}">${esc(title.toUpperCase())}</text>
+  const secHeader = (x, y, title, icon) =>
+    `<rect x="${x}" y="${y-22}" width="30" height="30" rx="6" fill="${CYAN}" opacity="0.15"/>
+<rect x="${x}" y="${y-22}" width="30" height="30" rx="6" fill="none" stroke="${CYAN}" stroke-width="1.5" opacity="0.6"/>
+${iconPath(icon, x+7, y-15, CYAN)}
+<text x="${x+40}" y="${y}" font-family="Arial,sans-serif" font-size="17" font-weight="800" fill="${WHITE}">${esc(title.toUpperCase())}</text>
 <line x1="${x}" y1="${y+10}" x2="${x+colW}" y2="${y+10}" stroke="${BORDER}" stroke-width="1"/>`;
 
   const lname = esc((d.leagueName || "").toUpperCase());
@@ -155,7 +191,7 @@ function buildDarkNeon(d) {
 <rect y="288" width="${W}" height="3" fill="url(#neonAccent)"/>`;
 
   let y = 296 + 44;
-  body += secHeader(lx, y, lang==="ru"?"Турнирная таблица":"Turnir jadvali");
+  body += secHeader(lx, y, lang==="ru"?"Турнирная таблица":"Turnir jadvali", "trophy");
   y += 28;
   body += `<rect x="${lx-8}" y="${y}" width="${colW+16}" height="30" rx="6" fill="rgba(0,217,255,0.06)"/>
 <text x="${lx+4}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${GRAY}" letter-spacing="1">#</text>
@@ -181,7 +217,7 @@ function buildDarkNeon(d) {
   }
 
   let ry2 = 296 + 44;
-  body += secHeader(rx, ry2, lang==="ru"?"Результаты":"Natijalar");
+  body += secHeader(rx, ry2, lang==="ru"?"Результаты":"Natijalar", "ball");
   ry2 += 28;
   for (const m of results) {
     const hasH = !!(m.label || m.date), cardH = hasH ? 74 : 56;
@@ -202,7 +238,7 @@ function buildDarkNeon(d) {
   }
 
   ry2 += 16;
-  body += secHeader(rx, ry2, lang==="ru"?"Лучшие игроки":"Eng yaxshi o'yinchilar");
+  body += secHeader(rx, ry2, lang==="ru"?"Лучшие игроки":"Eng yaxshi o'yinchilar", "star");
   ry2 += 28;
   const medalC = ["#FFD700","#C0C0C0","#CD7F32"];
   for (let i = 0; i < top.length; i++) {
@@ -239,8 +275,11 @@ function buildMinimal(d) {
   const pad = 60, colW = (W - pad * 2 - 44) / 2;
   const lx = pad, rx = pad + colW + 44;
 
-  const secHeader = (x, y, title) =>
-    `<text x="${x}" y="${y}" font-family="Georgia,serif" font-size="13" font-weight="700" fill="${GOLD}" letter-spacing="3">${esc(title.toUpperCase())}</text>
+  const secHeader = (x, y, title, icon) =>
+    `<rect x="${x}" y="${y-22}" width="30" height="30" rx="6" fill="${GOLD}" opacity="0.15"/>
+<rect x="${x}" y="${y-22}" width="30" height="30" rx="6" fill="none" stroke="${GOLD}" stroke-width="1.5" opacity="0.7"/>
+${iconPath(icon, x+7, y-15, GOLD)}
+<text x="${x+40}" y="${y}" font-family="Georgia,serif" font-size="13" font-weight="700" fill="${CHARCOAL}" letter-spacing="2">${esc(title.toUpperCase())}</text>
 <line x1="${x}" y1="${y+10}" x2="${x+colW}" y2="${y+10}" stroke="${GOLD}" stroke-width="1.5" opacity="0.4"/>`;
 
   const lname = esc((d.leagueName || "").toUpperCase());
@@ -255,7 +294,7 @@ function buildMinimal(d) {
 <line x1="0" y1="290" x2="${W}" y2="290" stroke="${GOLD}" stroke-width="2"/>`;
 
   let y = 296 + 44;
-  body += secHeader(lx, y, lang==="ru"?"Турнирная таблица":"Turnir jadvali");
+  body += secHeader(lx, y, lang==="ru"?"Турнирная таблица":"Turnir jadvali", "trophy");
   y += 28;
   body += `<rect x="${lx-8}" y="${y}" width="${colW+16}" height="30" rx="6" fill="${GOLD}" opacity="0.07"/>
 <text x="${lx+4}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${GRAY}" letter-spacing="1">#</text>
@@ -281,7 +320,7 @@ function buildMinimal(d) {
   }
 
   let ry2 = 296 + 44;
-  body += secHeader(rx, ry2, lang==="ru"?"Результаты":"Natijalar");
+  body += secHeader(rx, ry2, lang==="ru"?"Результаты":"Natijalar", "ball");
   ry2 += 28;
   for (const m of results) {
     const hasH = !!(m.label || m.date), cardH = hasH ? 74 : 56;
@@ -301,7 +340,7 @@ function buildMinimal(d) {
   }
 
   ry2 += 16;
-  body += secHeader(rx, ry2, lang==="ru"?"Лучшие игроки":"Eng yaxshi o'yinchilar");
+  body += secHeader(rx, ry2, lang==="ru"?"Лучшие игроки":"Eng yaxshi o'yinchilar", "star");
   ry2 += 28;
   const medalC = ["#D4A017","#9AA0AE","#9C5A1F"];
   for (let i = 0; i < top.length; i++) {
