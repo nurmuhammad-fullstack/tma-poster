@@ -43,12 +43,14 @@ function buildClassic(d) {
   let y = 296 + 44;
   body += secHeader(lx, y, lang==="ru"?"Турнирная таблица":"Turnir jadvali");
   y += 28;
-  body += `<text x="${lx}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">#</text>
-<text x="${lx+72}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${lang==="ru"?"КОМАНДА":"JAMOA"}</text>
-<text x="${lx+colW-114}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${lang==="ru"?"И":"O'"}</text>
-<text x="${lx+colW-70}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${lang==="ru"?"С":"S"}</text>
-<text x="${lx+colW-28}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${lang==="ru"?"О":"B"}</text>`;
-  y += 32;
+  body += `<rect x="${lx-8}" y="${y+2}" width="${colW+16}" height="28" rx="6" fill="${NAVY}" opacity="0.07"/>
+<text x="${lx+4}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${GRAY}" letter-spacing="1">#</text>
+<text x="${lx+72}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${GRAY}" letter-spacing="1">${lang==="ru"?"КОМАНДА":"JAMOA"}</text>
+<text x="${lx+colW-107}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${ACCENT}" text-anchor="middle" letter-spacing="1">${lang==="ru"?"И":"O'"}</text>
+<text x="${lx+colW-62}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${ACCENT}" text-anchor="middle" letter-spacing="1">${lang==="ru"?"С":"S"}</text>
+<text x="${lx+colW-17}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${ACCENT}" text-anchor="middle" letter-spacing="1">${lang==="ru"?"О":"B"}</text>
+<line x1="${lx-8}" y1="${y+30}" x2="${lx+colW+8}" y2="${y+30}" stroke="${ACCENT}" stroke-width="1.5" opacity="0.3"/>`;
+  y += 36;
 
   for (let i = 0; i < standings.length; i++) {
     const row = standings[i], ry = y + i * 46;
@@ -152,12 +154,14 @@ function buildDarkNeon(d) {
   let y = 296 + 44;
   body += secHeader(lx, y, lang==="ru"?"Турнирная таблица":"Turnir jadvali");
   y += 28;
-  body += `<text x="${lx}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">#</text>
-<text x="${lx+72}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${lang==="ru"?"КОМАНДА":"JAMOA"}</text>
-<text x="${lx+colW-114}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${lang==="ru"?"И":"O'"}</text>
-<text x="${lx+colW-70}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${lang==="ru"?"С":"S"}</text>
-<text x="${lx+colW-28}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${lang==="ru"?"О":"B"}</text>`;
-  y += 32;
+  body += `<rect x="${lx-8}" y="${y+2}" width="${colW+16}" height="28" rx="6" fill="rgba(0,217,255,0.06)"/>
+<text x="${lx+4}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${GRAY}" letter-spacing="1">#</text>
+<text x="${lx+72}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${GRAY}" letter-spacing="1">${lang==="ru"?"КОМАНДА":"JAMOA"}</text>
+<text x="${lx+colW-107}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${CYAN}" text-anchor="middle" letter-spacing="1">${lang==="ru"?"И":"O'"}</text>
+<text x="${lx+colW-62}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${CYAN}" text-anchor="middle" letter-spacing="1">${lang==="ru"?"С":"S"}</text>
+<text x="${lx+colW-17}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${CYAN}" text-anchor="middle" letter-spacing="1">${lang==="ru"?"О":"B"}</text>
+<line x1="${lx-8}" y1="${y+30}" x2="${lx+colW+8}" y2="${y+30}" stroke="${CYAN}" stroke-width="1.5" opacity="0.25"/>`;
+  y += 36;
 
   for (let i = 0; i < standings.length; i++) {
     const row = standings[i], ry = y + i * 46;
@@ -249,12 +253,14 @@ function buildMinimal(d) {
   let y = 296 + 44;
   body += secHeader(lx, y, lang==="ru"?"Турнирная таблица":"Turnir jadvali");
   y += 28;
-  body += `<text x="${lx}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">#</text>
-<text x="${lx+72}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${lang==="ru"?"КОМАНДА":"JAMOA"}</text>
-<text x="${lx+colW-114}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${lang==="ru"?"И":"O'"}</text>
-<text x="${lx+colW-70}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${lang==="ru"?"С":"S"}</text>
-<text x="${lx+colW-28}" y="${y+18}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${lang==="ru"?"О":"B"}</text>`;
-  y += 32;
+  body += `<rect x="${lx-8}" y="${y+2}" width="${colW+16}" height="28" rx="6" fill="${GOLD}" opacity="0.07"/>
+<text x="${lx+4}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${GRAY}" letter-spacing="1">#</text>
+<text x="${lx+72}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${GRAY}" letter-spacing="1">${lang==="ru"?"КОМАНДА":"JAMOA"}</text>
+<text x="${lx+colW-107}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${GOLD}" text-anchor="middle" letter-spacing="1">${lang==="ru"?"И":"O'"}</text>
+<text x="${lx+colW-62}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${GOLD}" text-anchor="middle" letter-spacing="1">${lang==="ru"?"С":"S"}</text>
+<text x="${lx+colW-17}" y="${y+20}" font-family="Arial,sans-serif" font-size="10" font-weight="800" fill="${GOLD}" text-anchor="middle" letter-spacing="1">${lang==="ru"?"О":"B"}</text>
+<line x1="${lx-8}" y1="${y+30}" x2="${lx+colW+8}" y2="${y+30}" stroke="${GOLD}" stroke-width="1.5" opacity="0.3"/>`;
+  y += 36;
 
   for (let i = 0; i < standings.length; i++) {
     const row = standings[i], ry = y + i * 46;
