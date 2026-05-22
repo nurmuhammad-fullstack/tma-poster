@@ -62,7 +62,7 @@ function buildClassic(d) {
     `<rect x="${x}" y="${y-22}" width="30" height="30" rx="6" fill="${ACCENT}"/>
 ${iconPath(icon, x+7, y-15, "#fff")}
 <text x="${x+40}" y="${y}" font-family="Arial,sans-serif" font-size="17" font-weight="800" fill="${NAVY}">${esc(title.toUpperCase())}</text>
-<line x1="${x}" y1="${y+8}" x2="${x+colW}" y2="${y+8}" stroke="${NAVY}" stroke-width="2"/>`;
+<line x1="${x}" y1="${y+20}" x2="${x+colW}" y2="${y+20}" stroke="${NAVY}" stroke-width="2"/>`;
 
   const lname = esc((d.leagueName || "").toUpperCase());
   const lsize = lname.length > 18 ? 46 : lname.length > 12 ? 56 : 66;
@@ -165,7 +165,7 @@ function buildDarkNeon(d) {
 <rect x="${x}" y="${y-22}" width="30" height="30" rx="6" fill="none" stroke="${CYAN}" stroke-width="1.5" opacity="0.6"/>
 ${iconPath(icon, x+7, y-15, CYAN)}
 <text x="${x+40}" y="${y}" font-family="Arial,sans-serif" font-size="17" font-weight="800" fill="${WHITE}">${esc(title.toUpperCase())}</text>
-<line x1="${x}" y1="${y+10}" x2="${x+colW}" y2="${y+10}" stroke="${BORDER}" stroke-width="1"/>`;
+<line x1="${x}" y1="${y+20}" x2="${x+colW}" y2="${y+20}" stroke="${BORDER}" stroke-width="1"/>`;
 
   const lname = esc((d.leagueName || "").toUpperCase());
   const lsize = lname.length > 18 ? 46 : lname.length > 12 ? 56 : 66;
@@ -280,7 +280,7 @@ function buildMinimal(d) {
 <rect x="${x}" y="${y-22}" width="30" height="30" rx="6" fill="none" stroke="${GOLD}" stroke-width="1.5" opacity="0.7"/>
 ${iconPath(icon, x+7, y-15, GOLD)}
 <text x="${x+40}" y="${y}" font-family="Georgia,serif" font-size="13" font-weight="700" fill="${CHARCOAL}" letter-spacing="2">${esc(title.toUpperCase())}</text>
-<line x1="${x}" y1="${y+10}" x2="${x+colW}" y2="${y+10}" stroke="${GOLD}" stroke-width="1.5" opacity="0.4"/>`;
+<line x1="${x}" y1="${y+20}" x2="${x+colW}" y2="${y+20}" stroke="${GOLD}" stroke-width="1.5" opacity="0.4"/>`;
 
   const lname = esc((d.leagueName || "").toUpperCase());
   const lsize = lname.length > 18 ? 46 : lname.length > 12 ? 56 : 66;
