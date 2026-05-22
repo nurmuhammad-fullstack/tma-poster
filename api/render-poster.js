@@ -76,10 +76,12 @@ function buildClassic(d) {
       body += `<text x="${rx+14}" y="${ry2+22}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${esc((m.label||"").toUpperCase())}</text>`;
       if (m.date) body += `<text x="${rx+colW-14}" y="${ry2+22}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}" text-anchor="end">${esc(m.date)}</text>`;
     }
-    body += `<text x="${cx-48}" y="${sy}" font-family="Arial,sans-serif" font-size="15" font-weight="600" fill="${NAVY}" text-anchor="end">${esc(m.home||"—")}</text>
-<rect x="${cx-40}" y="${sy-18}" width="80" height="27" rx="7" fill="${NAVY}"/>
-<text x="${cx}" y="${sy}" font-family="Arial,sans-serif" font-size="15" font-weight="800" fill="${WHITE}" text-anchor="middle">${esc(m.homeScore)} : ${esc(m.awayScore)}</text>
-<text x="${cx+48}" y="${sy}" font-family="Arial,sans-serif" font-size="15" font-weight="600" fill="${NAVY}">${esc(m.away||"—")}</text>`;
+    body += `<text x="${cx-52}" y="${sy}" font-family="Arial,sans-serif" font-size="14" font-weight="600" fill="${NAVY}" text-anchor="end">${esc(m.home||"—")}</text>
+<rect x="${cx-44}" y="${sy-19}" width="88" height="28" rx="7" fill="${NAVY}"/>
+<text x="${cx-10}" y="${sy}" font-family="Arial,sans-serif" font-size="15" font-weight="800" fill="${WHITE}" text-anchor="middle">${esc(m.homeScore)}</text>
+<text x="${cx}" y="${sy}" font-family="Arial,sans-serif" font-size="13" font-weight="400" fill="rgba(255,255,255,0.6)" text-anchor="middle">:</text>
+<text x="${cx+10}" y="${sy}" font-family="Arial,sans-serif" font-size="15" font-weight="800" fill="${WHITE}" text-anchor="middle">${esc(m.awayScore)}</text>
+<text x="${cx+52}" y="${sy}" font-family="Arial,sans-serif" font-size="14" font-weight="600" fill="${NAVY}">${esc(m.away||"—")}</text>`;
     ry2 += cardH + 12;
   }
 
@@ -184,10 +186,12 @@ function buildDarkNeon(d) {
       body += `<text x="${rx+14}" y="${ry2+22}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${esc((m.label||"").toUpperCase())}</text>`;
       if (m.date) body += `<text x="${rx+colW-14}" y="${ry2+22}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}" text-anchor="end">${esc(m.date)}</text>`;
     }
-    body += `<text x="${cx-48}" y="${sy}" font-family="Arial,sans-serif" font-size="15" font-weight="600" fill="${WHITE}" text-anchor="end">${esc(m.home||"—")}</text>
-<rect x="${cx-40}" y="${sy-18}" width="80" height="27" rx="7" fill="url(#neonAccent)"/>
-<text x="${cx}" y="${sy}" font-family="Arial,sans-serif" font-size="15" font-weight="800" fill="${WHITE}" text-anchor="middle">${esc(m.homeScore)} : ${esc(m.awayScore)}</text>
-<text x="${cx+48}" y="${sy}" font-family="Arial,sans-serif" font-size="15" font-weight="600" fill="${WHITE}">${esc(m.away||"—")}</text>`;
+    body += `<text x="${cx-52}" y="${sy}" font-family="Arial,sans-serif" font-size="14" font-weight="600" fill="${WHITE}" text-anchor="end">${esc(m.home||"—")}</text>
+<rect x="${cx-44}" y="${sy-19}" width="88" height="28" rx="7" fill="url(#neonAccent)"/>
+<text x="${cx-10}" y="${sy}" font-family="Arial,sans-serif" font-size="15" font-weight="800" fill="${WHITE}" text-anchor="middle">${esc(m.homeScore)}</text>
+<text x="${cx}" y="${sy}" font-family="Arial,sans-serif" font-size="13" font-weight="400" fill="rgba(255,255,255,0.6)" text-anchor="middle">:</text>
+<text x="${cx+10}" y="${sy}" font-family="Arial,sans-serif" font-size="15" font-weight="800" fill="${WHITE}" text-anchor="middle">${esc(m.awayScore)}</text>
+<text x="${cx+52}" y="${sy}" font-family="Arial,sans-serif" font-size="14" font-weight="600" fill="${WHITE}">${esc(m.away||"—")}</text>`;
     ry2 += cardH + 12;
   }
 
@@ -279,10 +283,12 @@ function buildMinimal(d) {
       body += `<text x="${rx+14}" y="${ry2+22}" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="${GRAY}">${esc((m.label||"").toUpperCase())}</text>`;
       if (m.date) body += `<text x="${rx+colW-14}" y="${ry2+22}" font-family="Arial,sans-serif" font-size="11" fill="${GRAY}" text-anchor="end">${esc(m.date)}</text>`;
     }
-    body += `<text x="${cx-48}" y="${sy}" font-family="Arial,sans-serif" font-size="15" font-weight="600" fill="${CHARCOAL}" text-anchor="end">${esc(m.home||"—")}</text>
-<rect x="${cx-38}" y="${sy-18}" width="76" height="26" rx="6" fill="${CHARCOAL}"/>
-<text x="${cx}" y="${sy}" font-family="Arial,sans-serif" font-size="14" font-weight="800" fill="${WHITE}" text-anchor="middle">${esc(m.homeScore)} : ${esc(m.awayScore)}</text>
-<text x="${cx+48}" y="${sy}" font-family="Arial,sans-serif" font-size="15" font-weight="600" fill="${CHARCOAL}">${esc(m.away||"—")}</text>`;
+    body += `<text x="${cx-52}" y="${sy}" font-family="Arial,sans-serif" font-size="14" font-weight="600" fill="${CHARCOAL}" text-anchor="end">${esc(m.home||"—")}</text>
+<rect x="${cx-44}" y="${sy-19}" width="88" height="28" rx="6" fill="${CHARCOAL}"/>
+<text x="${cx-10}" y="${sy}" font-family="Arial,sans-serif" font-size="15" font-weight="800" fill="${WHITE}" text-anchor="middle">${esc(m.homeScore)}</text>
+<text x="${cx}" y="${sy}" font-family="Arial,sans-serif" font-size="13" font-weight="400" fill="rgba(255,255,255,0.5)" text-anchor="middle">:</text>
+<text x="${cx+10}" y="${sy}" font-family="Arial,sans-serif" font-size="15" font-weight="800" fill="${WHITE}" text-anchor="middle">${esc(m.awayScore)}</text>
+<text x="${cx+52}" y="${sy}" font-family="Arial,sans-serif" font-size="14" font-weight="600" fill="${CHARCOAL}">${esc(m.away||"—")}</text>`;
     ry2 += cardH + 12;
   }
 
