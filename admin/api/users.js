@@ -1,12 +1,12 @@
-// GET /api/users?page=1&limit=50 — paginated user list
-// Requires Authorization: Bearer <token>
+const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL;
+const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+const REDIS_OK = !!(REDIS_URL && REDIS_TOKEN);
 
 async function redis(cmd) {
+  if (!REDIS_OK) return { result: null };
   const res = await fetch(
-    `${process.env.UPSTASH_REDIS_REST_URL}/${cmd.map(encodeURIComponent).join('/')}`,
-    {
-      headers: { Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}` },
-    }
+    `${REDIS_URL}/${cmd.map(encodeURIComponent).join('/')}`,
+    { headers: { Authorization: `Bearer ${REDIS_TOKEN}` } }
   );
   return res.json();
 }
@@ -17,23 +17,23 @@ function isAuthorized(req) {
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  if (!isAuthorized(req)) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  if (!isAuthorized(req)) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
+    if (!REDIS_OK) {
+      return res.status(200).json({ total: 0, page: 1, limit: 50, totalPages: 0, users: [] });
+    }
+
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(200, Math.max(1, parseInt(req.query.limit) || 50));
 
-    // Get all chat IDs
     const membersRes = await redis(['SMEMBERS', 'users']);
     const chatIds = membersRes.result || [];
 
-    // Fetch user data for each chat ID in parallel (batches of 50)
     const batchSize = 50;
     const users = [];
     for (let i = 0; i < chatIds.length; i += batchSize) {
@@ -41,14 +41,11 @@ export default async function handler(req, res) {
       const results = await Promise.all(
         batch.map((chatId) => redis(['HGETALL', `user:${chatId}`]))
       );
-      results.forEach((res, idx) => {
-        const data = res.result;
+      results.forEach((r, idx) => {
+        const data = r.result;
         if (data && data.length > 0) {
-          // HGETALL returns flat array: [field, value, field, value, ...]
           const obj = { chatId: batch[idx] };
-          for (let j = 0; j < data.length; j += 2) {
-            obj[data[j]] = data[j + 1];
-          }
+          for (let j = 0; j < data.length; j += 2) obj[data[j]] = data[j + 1];
           users.push(obj);
         } else {
           users.push({ chatId: batch[idx], firstName: '', username: '', joinedAt: '', lastActive: '' });
@@ -56,7 +53,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // Sort by joinedAt descending (most recent first)
     users.sort((a, b) => {
       if (!a.joinedAt) return 1;
       if (!b.joinedAt) return -1;
@@ -64,18 +60,11 @@ export default async function handler(req, res) {
     });
 
     const total = users.length;
-    const start = (page - 1) * limit;
-    const paginated = users.slice(start, start + limit);
+    const paginated = users.slice((page - 1) * limit, page * limit);
 
-    return res.status(200).json({
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-      users: paginated,
-    });
+    return res.status(200).json({ total, page, limit, totalPages: Math.ceil(total / limit), users: paginated });
   } catch (err) {
     console.error('Users error:', err);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: err.message });
   }
 }

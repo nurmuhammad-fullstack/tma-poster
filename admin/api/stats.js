@@ -1,12 +1,12 @@
-// GET /api/stats — returns dashboard statistics
-// Requires Authorization: Bearer <token>
+const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL;
+const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+const REDIS_OK = !!(REDIS_URL && REDIS_TOKEN);
 
 async function redis(cmd) {
+  if (!REDIS_OK) return { result: null };
   const res = await fetch(
-    `${process.env.UPSTASH_REDIS_REST_URL}/${cmd.map(encodeURIComponent).join('/')}`,
-    {
-      headers: { Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}` },
-    }
+    `${REDIS_URL}/${cmd.map(encodeURIComponent).join('/')}`,
+    { headers: { Authorization: `Bearer ${REDIS_TOKEN}` } }
   );
   return res.json();
 }
@@ -23,8 +23,7 @@ function dateKey(daysAgo) {
 }
 
 async function sunioncard(keys) {
-  if (keys.length === 0) return 0;
-  // Use SUNIONSTORE to a temp key, then SCARD, then DEL
+  if (!REDIS_OK || keys.length === 0) return 0;
   const tmpKey = `tmp:sunion:${Date.now()}:${Math.random().toString(36).slice(2)}`;
   await redis(['SUNIONSTORE', tmpKey, ...keys]);
   const result = await redis(['SCARD', tmpKey]);
@@ -33,50 +32,27 @@ async function sunioncard(keys) {
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  if (!isAuthorized(req)) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  if (!isAuthorized(req)) return res.status(401).json({ error: 'Unauthorized' });
 
   try {
-    // Total users
-    const totalUsersRes = await redis(['SCARD', 'users']);
-    const totalUsers = totalUsersRes.result || 0;
+    const totalUsers = REDIS_OK ? ((await redis(['SCARD', 'users'])).result || 0) : 0;
+    const activeToday = REDIS_OK ? ((await redis(['SCARD', dateKey(0)])).result || 0) : 0;
+    const activeLast7 = REDIS_OK ? await sunioncard(Array.from({ length: 7 }, (_, i) => dateKey(i))) : 0;
+    const activeLast30 = REDIS_OK ? await sunioncard(Array.from({ length: 30 }, (_, i) => dateKey(i))) : 0;
 
-    // Active today
-    const activeTodayRes = await redis(['SCARD', dateKey(0)]);
-    const activeToday = activeTodayRes.result || 0;
-
-    // Active last 7 days
-    const last7Keys = Array.from({ length: 7 }, (_, i) => dateKey(i));
-    const activeLast7 = await sunioncard(last7Keys);
-
-    // Active last 30 days
-    const last30Keys = Array.from({ length: 30 }, (_, i) => dateKey(i));
-    const activeLast30 = await sunioncard(last30Keys);
-
-    // Recent broadcasts (last 5)
-    const broadcastsRes = await redis(['LRANGE', 'broadcasts', '0', '4']);
+    const broadcastsRes = REDIS_OK ? await redis(['LRANGE', 'broadcasts', '0', '4']) : { result: [] };
     const recentBroadcasts = (broadcastsRes.result || []).map((item) => {
-      try {
-        return JSON.parse(item);
-      } catch {
-        return null;
-      }
+      try { return JSON.parse(item); } catch { return null; }
     }).filter(Boolean);
 
-    return res.status(200).json({
-      totalUsers,
-      activeToday,
-      activeLast7,
-      activeLast30,
-      recentBroadcasts,
-    });
+    return res.status(200).json({ totalUsers, activeToday, activeLast7, activeLast30, recentBroadcasts });
   } catch (err) {
     console.error('Stats error:', err);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: err.message });
   }
 }
