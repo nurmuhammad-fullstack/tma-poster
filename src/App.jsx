@@ -100,7 +100,7 @@ export default function App() {
       }),
     });
     const sendData = await sendResp.json();
-    if (!sendData.ok) throw new Error(sendData.error || "Yuborish xatosi");
+    if (!sendData.ok) throw new Error((sendData.error || "Yuborish xatosi") + ` (chatId: ${chatId})`);
   };
 
   const downloadPng = async () => {
